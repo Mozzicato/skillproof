@@ -1,0 +1,196 @@
+import { JOBS, PROJECTS } from "./framework";
+import type {
+  Claim,
+  CompetencyId,
+  DefenceResultKind,
+  Evidence,
+  EvidenceSource,
+  Job,
+  Project,
+  Requirement,
+  Role,
+  Student,
+} from "./types";
+
+/** Applied work counts for more than a multiple-choice baseline. */
+const SOURCE_WEIGHT: Record<EvidenceSource, number> = { project: 1, interview: 0.8, assessment: 0.5 };
+/** Each older item counts for this share of the next newer one, so improvement shows up. */
+const RECENCY_DECAY = 0.7;
+/** Work the student has explained in person counts for more. */
+const DEFENDED_BONUS = 1.25;
+/** Work the student could not explain cannot score above this. */
+const FAILED_DEFENCE_CAP = 25;
+
+export function newestFirst(evidence: Evidence[]): Evidence[] {
+  return [...evidence].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+/** The evidenced score for one competency. Claims never enter this calculation. */
+export function competencyScore(evidence: Evidence[], id: CompetencyId): number | null {
+  const items = newestFirst(evidence).filter((e) => e.competencyId === id);
+  if (items.length === 0) return null;
+  let total = 0;
+  let weights = 0;
+  items.forEach((e, i) => {
+    const bonus = e.defence === "defended" ? DEFENDED_BONUS : 1;
+    const w = SOURCE_WEIGHT[e.source] * bonus * RECENCY_DECAY ** i;
+    total += (e.defence === "failed" ? Math.min(e.score, FAILED_DEFENCE_CAP) : e.score) * w;
+    weights += w;
+  });
+  return Math.round(total / weights);
+}
+
+export type Trust = "Defended" | "AI-evaluated" | "Assessed" | "Could not defend" | "Claimed only" | "No evidence";
+
+export function evidenceTrust(e: Evidence): Trust {
+  if (e.defence === "defended") return "Defended";
+  if (e.defence === "failed") return "Could not defend";
+  return e.source === "assessment" ? "Assessed" : "AI-evaluated";
+}
+
+/** The strongest kind of proof behind a skill. A claim alone is never more than "Claimed only". */
+export function skillTrust(evidence: Evidence[], claims: Claim[], id: CompetencyId): Trust {
+  const found = evidence.filter((e) => e.competencyId === id).map(evidenceTrust);
+  for (const level of ["Defended", "AI-evaluated", "Assessed", "Could not defend"] as const) {
+    if (found.includes(level)) return level;
+  }
+  return claims.some((c) => c.competencyId === id) ? "Claimed only" : "No evidence";
+}
+
+/** A high band needs a real quote. A low band stands without one, since a blank answer has nothing to quote. */
+export function defenceResult(band: number, grounded: boolean): DefenceResultKind {
+  if (band <= 1) return "failed";
+  return band >= 3 && grounded ? "defended" : "partial";
+}
+
+export function levelName(score: number | null): string {
+  if (score === null) return "No evidence";
+  if (score >= 80) return "Advanced";
+  if (score >= 60) return "Proficient";
+  if (score >= 40) return "Developing";
+  return "Beginner";
+}
+
+/** 0 to 100: how far evidenced skills cover a set of requirements. Missing evidence counts as zero. */
+export function readiness(requirements: Requirement[], evidence: Evidence[]): number {
+  if (requirements.length === 0) return 0;
+  const sum = requirements.reduce((acc, r) => {
+    const score = competencyScore(evidence, r.competencyId) ?? 0;
+    return acc + Math.min(score / r.level, 1);
+  }, 0);
+  return Math.round((sum / requirements.length) * 100);
+}
+
+export type GapStatus = "Met" | "Close" | "Gap" | "No evidence";
+
+export interface GapRow {
+  competencyId: CompetencyId;
+  required: number;
+  score: number | null;
+  claimed: number | null;
+  shortfall: number;
+  status: GapStatus;
+}
+
+export function gapRows(requirements: Requirement[], evidence: Evidence[], claims: Claim[]): GapRow[] {
+  return requirements
+    .map((r): GapRow => {
+      const score = competencyScore(evidence, r.competencyId);
+      const claim = claims.find((c) => c.competencyId === r.competencyId);
+      const shortfall = Math.max(r.level - (score ?? 0), 0);
+      const status: GapStatus =
+        score === null ? "No evidence" : shortfall === 0 ? "Met" : shortfall <= 15 ? "Close" : "Gap";
+      return { competencyId: r.competencyId, required: r.level, score, claimed: claim?.level ?? null, shortfall, status };
+    })
+    .sort((a, b) => b.shortfall - a.shortfall);
+}
+
+export type ClaimVerdict = "Proven" | "Partly proven" | "Unproven";
+
+export function claimVerdict(claimed: number, score: number | null): ClaimVerdict {
+  if (score === null) return "Unproven";
+  if (score >= claimed - 5) return "Proven";
+  return "Partly proven";
+}
+
+export interface HistoryPoint {
+  date: string;
+  readiness: number;
+}
+
+/** Readiness after each day on which evidence was added. */
+export function readinessHistory(requirements: Requirement[], evidence: Evidence[]): HistoryPoint[] {
+  const days = [...new Set(evidence.map((e) => e.createdAt.slice(0, 10)))].sort();
+  return days.map((date) => ({
+    date,
+    readiness: readiness(requirements, evidence.filter((e) => e.createdAt.slice(0, 10) <= date)),
+  }));
+}
+
+export function recommendProjects(role: Role, student: Student): Project[] {
+  const gaps = gapRows(role.requirements, student.evidence, student.claims);
+  const done = new Set(student.evaluations.map((e) => e.projectId));
+  const value = (p: Project) =>
+    p.rubric.reduce((acc, c) => acc + (gaps.find((g) => g.competencyId === c.competencyId)?.shortfall ?? 0), 0);
+  return PROJECTS.filter((p) => !done.has(p.id) && value(p) > 0).sort((a, b) => value(b) - value(a));
+}
+
+export interface JobMatch {
+  job: Job;
+  met: number;
+  total: number;
+  readiness: number;
+  missing: Requirement[];
+}
+
+export function jobMatches(evidence: Evidence[]): JobMatch[] {
+  return JOBS.map((job) => {
+    const missing = job.requirements.filter((r) => (competencyScore(evidence, r.competencyId) ?? 0) < r.level);
+    return {
+      job,
+      met: job.requirements.length - missing.length,
+      total: job.requirements.length,
+      readiness: readiness(job.requirements, evidence),
+      missing,
+    };
+  }).sort((a, b) => b.readiness - a.readiness);
+}
+
+export interface CycleStep {
+  name: "Assess" | "Identify" | "Develop" | "Demonstrate" | "Reassess" | "Connect";
+  done: boolean;
+}
+
+export function cycleStatus(role: Role, student: Student): CycleStep[] {
+  const sources = new Set(student.evidence.map((e) => e.source));
+  const assessed = sources.has("assessment");
+  const demonstrated = sources.has("project") || sources.has("interview");
+  const assessmentDays = new Set(
+    student.evidence.filter((e) => e.source === "assessment").map((e) => e.createdAt.slice(0, 10)),
+  );
+  const matched = jobMatches(student.evidence).some((m) => m.missing.length === 0);
+  return [
+    { name: "Assess", done: assessed },
+    { name: "Identify", done: assessed },
+    { name: "Develop", done: student.evaluations.length > 0 },
+    { name: "Demonstrate", done: demonstrated },
+    { name: "Reassess", done: assessmentDays.size > 1 },
+    { name: "Connect", done: matched },
+  ];
+}
+
+/**
+ * AI-quoted evidence only counts if the quote really appears in the student's text.
+ * Whitespace is normalised because models and editors reflow lines.
+ */
+export function isGrounded(excerpt: string | null | undefined, source: string): boolean {
+  if (!excerpt) return false;
+  const normalise = (s: string) => s.replace(/\s+/g, " ").trim();
+  const quote = normalise(excerpt);
+  return quote.length >= 8 && normalise(source).includes(quote);
+}
+
+export function clampScore(n: number, max = 100): number {
+  if (!Number.isFinite(n)) return 0;
+  return Math.min(Math.max(Math.round(n), 0), max);
+}
