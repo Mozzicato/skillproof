@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   const parsed = DefenceBody.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Answer the questions first." }, { status: 400 });
 
-  const student = getStudent();
+  const student = (await getStudent());
   const evaluation = student.evaluations.find((e) => e.id === parsed.data.evaluationId);
   if (!evaluation?.submission) return NextResponse.json({ error: "This project has no submission to defend." }, { status: 404 });
   if (evaluation.defence) return NextResponse.json({ error: "This project has already been defended." }, { status: 409 });
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
       return result === "defended" || result === "failed" ? { ...item, defence: result } : item;
     });
 
-    saveStudent({
+    await saveStudent({
       ...student,
       evidence,
       evaluations: student.evaluations.map((e) =>

@@ -10,6 +10,6 @@ export async function POST(request: Request) {
   if (!parsed.success || !ROLES.some((r) => r.id === parsed.data.roleId)) {
     return NextResponse.json({ error: "Choose one of the listed roles." }, { status: 400 });
   }
-  saveStudent({ ...getStudent(), targetRoleId: parsed.data.roleId });
+  await saveStudent({ ...(await getStudent()), targetRoleId: parsed.data.roleId });
   return NextResponse.json({ ok: true });
 }

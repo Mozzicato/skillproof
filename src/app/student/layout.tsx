@@ -1,28 +1,42 @@
 import Link from "next/link";
+import { SignOutButton } from "@/components/AuthForms";
 import { ResetDemo, RoleSelect } from "@/components/client";
 import { StudentNav } from "@/components/StudentNav";
 import { ROLES, role } from "@/lib/framework";
 import { cycleStatus } from "@/lib/scoring";
-import { getStudent } from "@/lib/store";
+import { getStudent, getViewer } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
-export default function StudentLayout({ children }: { children: React.ReactNode }) {
-  const student = getStudent();
+export default async function StudentLayout({ children }: { children: React.ReactNode }) {
+  const [student, viewer] = await Promise.all([getStudent(), getViewer()]);
+  const demo = viewer.mode === "demo";
   return (
     <div className="shell">
       <aside className="rail">
-        <Link href="/" className="brand">SkillProof</Link>
         <StudentNav steps={cycleStatus(role(student.targetRoleId), student)} />
-        <div className="rail-foot">
-          <strong style={{ color: "#fff" }}>{student.name}</strong>
-          <span>{student.department}</span>
-          <RoleSelect value={student.targetRoleId} roles={ROLES.map((r) => ({ id: r.id, title: r.title }))} />
-          <Link href={`/p/${student.id}`}>View public portfolio</Link>
-          <div><ResetDemo /></div>
-        </div>
       </aside>
-      <main className="main">{children}</main>
+      <div className="page">
+        {demo && (
+          <div className="demo-banner" role="note">
+            <span className="badge judge">Judge demo</span>
+            <span>You are viewing a sample student with work already scored. Your changes stay private to this browser.</span>
+            <Link href="/signup">Create your own account</Link>
+          </div>
+        )}
+        <header className="appbar">
+          <div className="appbar-who">
+            <strong>{student.name}</strong>
+            <span className="muted">{student.department}</span>
+          </div>
+          <div className="appbar-tools">
+            <RoleSelect value={student.targetRoleId} roles={ROLES.map((r) => ({ id: r.id, title: r.title }))} />
+            <Link href={`/p/${student.id}`}>Public portfolio</Link>
+            {demo ? <ResetDemo /> : <SignOutButton />}
+          </div>
+        </header>
+        <main className="main">{children}</main>
+      </div>
     </div>
   );
 }

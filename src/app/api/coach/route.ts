@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     "Base your advice on the evidence record below, name the specific skills involved, " +
     "and be honest when the evidence is thin. Keep replies under 150 words, in plain language, " +
     "and end with one concrete next action.\n\n" +
-    studentContext(getStudent());
+    studentContext((await getStudent()));
 
   return streamedReply(system, parsed.data.messages);
 }

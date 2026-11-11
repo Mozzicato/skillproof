@@ -5,8 +5,8 @@ import { competency, role } from "@/lib/framework";
 import { competencyScore, newestFirst, readinessHistory } from "@/lib/scoring";
 import { getStudent } from "@/lib/store";
 
-export default function ProgressPage() {
-  const student = getStudent();
+export default async function ProgressPage() {
+  const student = (await getStudent());
   const target = role(student.targetRoleId);
   const history = readinessHistory(target.requirements, student.evidence);
   const firstDay = history[0]?.date;
@@ -39,9 +39,13 @@ export default function ProgressPage() {
       </section>
       <section className="panel">
         <h2>Evidence timeline</h2>
-        <ul className="list">
-          {newestFirst(student.evidence).map((item) => <li key={item.id}><EvidenceItem item={item} showSkill /></li>)}
-        </ul>
+        {student.evidence.length === 0 ? (
+          <p className="muted" style={{ marginTop: "0.75rem" }}>No evidence yet. <Link href="/student/assessment">Take the assessment</Link> to record your first scores.</p>
+        ) : (
+          <ul className="list">
+            {newestFirst(student.evidence).map((item) => <li key={item.id}><EvidenceItem item={item} showSkill /></li>)}
+          </ul>
+        )}
       </section>
     </div>
   );

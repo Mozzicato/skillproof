@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     "You are conducting a mock entry-level job interview. Ask exactly one question at a time, " +
     "with no preamble and no feedback between questions. Mix technical and behavioural questions, " +
     "focus on the skills with the largest gaps below, and follow up when an answer is vague.\n\n" +
-    studentContext(getStudent());
+    studentContext((await getStudent()));
 
   return streamedReply(system, parsed.data.messages);
 }

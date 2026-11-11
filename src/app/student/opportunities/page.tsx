@@ -4,8 +4,8 @@ import { competency } from "@/lib/framework";
 import { jobMatches } from "@/lib/scoring";
 import { getStudent } from "@/lib/store";
 
-export default function OpportunitiesPage() {
-  const matches = jobMatches(getStudent().evidence);
+export default async function OpportunitiesPage() {
+  const matches = jobMatches((await getStudent()).evidence);
   return (
     <div className="stack-lg">
       <PageHead title="Jobs and internships" intro="Matched on the skills you have proven. These listings are fictional samples." />

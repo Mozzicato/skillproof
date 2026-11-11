@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   const parsed = DefenceBody.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Write an answer first." }, { status: 400 });
 
-  const evaluation = getStudent().evaluations.find((e) => e.id === parsed.data.evaluationId);
+  const evaluation = (await getStudent()).evaluations.find((e) => e.id === parsed.data.evaluationId);
   if (!evaluation?.submission) return NextResponse.json({ error: "This project has no submission to defend." }, { status: 404 });
   if (evaluation.defence) return NextResponse.json({ error: "This project has already been defended." }, { status: 409 });
 

@@ -190,6 +190,11 @@ export function isGrounded(excerpt: string | null | undefined, source: string): 
   return quote.length >= 8 && normalise(source).includes(quote);
 }
 
+/** Full marks are only possible when the marker found nothing wrong. */
+export function cappedBand(band: number, weaknessCount: number): number {
+  return Math.min(clampScore(band, 4), weaknessCount > 0 ? 3 : 4);
+}
+
 export function clampScore(n: number, max = 100): number {
   if (!Number.isFinite(n)) return 0;
   return Math.min(Math.max(Math.round(n), 0), max);

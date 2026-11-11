@@ -1,14 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { competency } from "@/lib/framework";
 import type { HistoryPoint } from "@/lib/scoring";
 
 const DEFENCE_QUESTIONS = 3;
-import type { CompetencyId, ProjectEvaluation, Question } from "@/lib/types";
+import type { CompetencyId, ProjectEvaluation } from "@/lib/types";
 
-async function post<T>(url: string, body: unknown): Promise<T> {
+export async function post<T>(url: string, body: unknown): Promise<T> {
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -19,14 +19,14 @@ async function post<T>(url: string, body: unknown): Promise<T> {
   return data as T;
 }
 
-function message(error: unknown): string {
+export function message(error: unknown): string {
   return error instanceof Error ? error.message : "The request failed. Try again.";
 }
 
 export function RoleSelect({ value, roles }: { value: string; roles: { id: string; title: string }[] }) {
   const router = useRouter();
   return (
-    <label className="field small" style={{ color: "inherit" }}>
+    <label className="role-select">
       Target role
       <select
         value={value}
@@ -45,8 +45,7 @@ export function ResetDemo() {
   const router = useRouter();
   return (
     <button
-      className="btn quiet"
-      style={{ color: "#fff", borderColor: "#aab6e6", fontSize: "0.85rem", padding: "0.25rem 0.6rem" }}
+      className="linkish"
       onClick={async () => {
         await post("/api/reset", {});
         router.refresh();
@@ -54,63 +53,6 @@ export function ResetDemo() {
     >
       Reset sample data
     </button>
-  );
-}
-
-export function AssessmentForm({ questions, label }: { questions: Question[]; label: string }) {
-  const router = useRouter();
-  const [answers, setAnswers] = useState<Record<string, number>>({});
-  const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const answered = Object.keys(answers).length;
-
-  return (
-    <form
-      className="stack-lg"
-      onSubmit={async (e) => {
-        e.preventDefault();
-        setBusy(true);
-        setError("");
-        try {
-          await post("/api/assessment", { answers });
-          setSaved(true);
-          setAnswers({});
-          router.refresh();
-        } catch (err) {
-          setError(message(err));
-        } finally {
-          setBusy(false);
-        }
-      }}
-    >
-      {questions.map((q) => (
-        <fieldset key={q.id}>
-          <legend>{q.prompt}</legend>
-          <div className="small muted">{competency(q.competencyId).name}</div>
-          {q.options.map((option, i) => (
-            <label className="option" key={option}>
-              <input
-                type="radio"
-                name={q.id}
-                checked={answers[q.id] === i}
-                onChange={() => {
-                  setSaved(false);
-                  setAnswers({ ...answers, [q.id]: i });
-                }}
-              />
-              <span>{option}</span>
-            </label>
-          ))}
-        </fieldset>
-      ))}
-      {error && <p className="error" role="alert">{error}</p>}
-      {saved && <p className="notice" role="status">Results saved. Your scores and skill gaps are updated.</p>}
-      <div className="row">
-        <button className="btn" disabled={busy || answered < questions.length}>{busy ? "Saving" : label}</button>
-        <span className="small muted">{answered} of {questions.length} answered</span>
-      </div>
-    </form>
   );
 }
 
@@ -165,9 +107,10 @@ export function Coach({ suggestions }: { suggestions: string[] }) {
   return (
     <div className="stack">
       {messages.length === 0 && (
-        <div className="row">
+        <div className="prompts">
+          <h2>Start with a question</h2>
           {suggestions.map((s) => (
-            <button key={s} className="btn quiet" disabled={busy} onClick={() => send(s)}>{s}</button>
+            <button key={s} className="btn" disabled={busy} onClick={() => send(s)}>{s}</button>
           ))}
         </div>
       )}
@@ -562,7 +505,16 @@ export function CopyText({ text }: { text: string }) {
 
 export function ReadinessChart({ points }: { points: HistoryPoint[] }) {
   const [active, setActive] = useState<number | null>(null);
-  const W = 640, H = 200, L = 34, R = 14, T = 26, B = 28;
+  // Drawn at the real container width so labels stay readable on phones.
+  const box = useRef<HTMLDivElement>(null);
+  const [W, setW] = useState(640);
+  useEffect(() => {
+    if (!box.current) return;
+    const observer = new ResizeObserver(([entry]) => setW(Math.max(260, Math.round(entry.contentRect.width))));
+    observer.observe(box.current);
+    return () => observer.disconnect();
+  }, []);
+  const H = 200, L = 34, R = 14, T = 26, B = 28;
   const x = (i: number) => (points.length === 1 ? L : L + (i / (points.length - 1)) * (W - L - R));
   const y = (v: number) => T + (1 - v / 100) * (H - T - B);
   const label = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
@@ -570,7 +522,7 @@ export function ReadinessChart({ points }: { points: HistoryPoint[] }) {
   const shown = active ?? points.length - 1;
 
   return (
-    <div className="chart">
+    <div className="chart" ref={box}>
       <svg
         viewBox={`0 0 ${W} ${H}`}
         role="img"
@@ -586,15 +538,15 @@ export function ReadinessChart({ points }: { points: HistoryPoint[] }) {
       >
         {[0, 50, 100].map((v) => (
           <g key={v}>
-            <line x1={L} x2={W - R} y1={y(v)} y2={y(v)} stroke="#d6dceb" />
-            <text x={L - 6} y={y(v) + 4} textAnchor="end" fontSize="11" fill="#56607f">{v}</text>
+            <line x1={L} x2={W - R} y1={y(v)} y2={y(v)} stroke="#cfe5e1" />
+            <text x={L - 6} y={y(v) + 4} textAnchor="end" fontSize="11" fill="#475569">{v}</text>
           </g>
         ))}
-        <path d={path} fill="none" stroke="#2f55d4" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-        <line x1={x(shown)} x2={x(shown)} y1={T} y2={H - B} stroke="#18245e" strokeOpacity="0.3" />
-        {points.map((p, i) => <circle key={p.date} cx={x(i)} cy={y(p.readiness)} r="4.5" fill="#2f55d4" stroke="#fff" strokeWidth="2" />)}
+        <path d={path} fill="none" stroke="#0d9488" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        <line x1={x(shown)} x2={x(shown)} y1={T} y2={H - B} stroke="#0b302d" strokeOpacity="0.3" />
+        {points.map((p, i) => <circle key={p.date} cx={x(i)} cy={y(p.readiness)} r="4.5" fill="#0d9488" stroke="#fff" strokeWidth="2" />)}
         {points.map((p, i) => (
-          <text key={p.date} x={x(i)} y={H - 8} textAnchor={i === 0 ? "start" : i === points.length - 1 ? "end" : "middle"} fontSize="11" fill="#56607f">{label(p.date)}</text>
+          <text key={p.date} x={x(i)} y={H - 8} textAnchor={i === 0 ? "start" : i === points.length - 1 ? "end" : "middle"} fontSize="11" fill="#475569">{label(p.date)}</text>
         ))}
       </svg>
       <div className="chart-tip" style={{ left: `${(Math.min(Math.max(x(shown), 60), W - 60) / W) * 100}%` }}>

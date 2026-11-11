@@ -10,7 +10,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const target = project(id);
   if (!target) notFound();
-  const latest = getStudent().evaluations.filter((e) => e.projectId === target.id).at(-1);
+  const latest = (await getStudent()).evaluations.filter((e) => e.projectId === target.id).at(-1);
 
   return (
     <div className="stack-lg">

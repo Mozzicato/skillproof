@@ -39,8 +39,8 @@ export async function POST(request: Request) {
       .filter((c) => isGrounded(c.text, parsed.data.cv) && !seen.has(c.competencyId) && seen.add(c.competencyId))
       .map((c) => ({ competencyId: c.competencyId, level: clampScore(c.level), text: c.text }));
 
-    const student = getStudent();
-    saveStudent({ ...student, claims, cvFeedback: { strengths: analysis.strengths, improvements: analysis.improvements } });
+    const student = (await getStudent());
+    await saveStudent({ ...student, claims, cvFeedback: { strengths: analysis.strengths, improvements: analysis.improvements } });
     return NextResponse.json({ claims: claims.length });
   } catch (error) {
     return aiErrorResponse(error);

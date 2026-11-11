@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   const parsed = Body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Answer the questions, then submit again." }, { status: 400 });
 
-  const student = getStudent();
+  const student = (await getStudent());
   const required = role(student.targetRoleId).requirements;
   const isReassessment = student.evidence.some((e) => e.source === "assessment");
   const createdAt = new Date().toISOString();
@@ -34,6 +34,6 @@ export async function POST(request: Request) {
   });
 
   if (evidence.length === 0) return NextResponse.json({ error: "Answer at least one question." }, { status: 400 });
-  saveStudent({ ...student, evidence: [...student.evidence, ...evidence] });
+  await saveStudent({ ...student, evidence: [...student.evidence, ...evidence] });
   return NextResponse.json({ added: evidence.length });
 }

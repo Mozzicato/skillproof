@@ -4,8 +4,8 @@ import { COMPETENCIES, competency, project, role } from "@/lib/framework";
 import { claimVerdict, competencyScore, levelName } from "@/lib/scoring";
 import { getStudent } from "@/lib/store";
 
-export default function ResumePage() {
-  const student = getStudent();
+export default async function ResumePage() {
+  const student = (await getStudent());
   const target = role(student.targetRoleId);
 
   const skillLines = COMPETENCIES.flatMap((c) => {
@@ -22,6 +22,12 @@ export default function ResumePage() {
     <div className="stack-lg">
       <PageHead title="CV" intro="See which claims in your CV are backed by evidence, and generate a CV made only of what you have proven." />
 
+      {student.claims.length === 0 ? (
+        <div className="empty">
+          <h2>No CV claims yet</h2>
+          <p className="muted">Paste your CV below. SkillProof will find each skill you claim and check it against your evidence.</p>
+        </div>
+      ) : (
       <section className="panel table-scroll">
         <h2>Your claims against your evidence</h2>
         <table style={{ marginTop: "0.75rem" }}>
@@ -42,6 +48,7 @@ export default function ResumePage() {
           </tbody>
         </table>
       </section>
+      )}
 
       {student.cvFeedback && (
         <section className="panel stack">

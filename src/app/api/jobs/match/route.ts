@@ -45,7 +45,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No requirements in this advert match the skills SkillProof measures." }, { status: 422 });
     }
 
-    const student = getStudent();
+    const student = (await getStudent());
     const rows = gapRows(requirements, student.evidence, student.claims).map((row) => ({
       id: row.competencyId,
       name: competency(row.competencyId).name,

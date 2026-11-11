@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { DATA_RULE, aiErrorResponse, structured, studentWork } from "@/lib/ai";
 import { project } from "@/lib/framework";
-import { clampScore, isGrounded } from "@/lib/scoring";
+import { cappedBand, isGrounded } from "@/lib/scoring";
 import { getStudent, saveStudent } from "@/lib/store";
 import type { CriterionResult, Evidence, ProjectEvaluation } from "@/lib/types";
 
@@ -18,6 +18,7 @@ const Grading = z.object({
   criteria: z.array(
     z.object({
       criterionId: z.string(),
+      weaknesses: z.array(z.string()).describe("Every specific flaw, gap or unhandled case in this part of the work"),
       band: z.number().int().describe("0 absent, 1 weak, 2 partial, 3 solid, 4 excellent"),
       rationale: z.string(),
       excerpt: z.string().nullable().describe("A verbatim quote copied from the student's work, or null if there is none"),
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
         "Grade only what the work shows, and never credit skills that are merely stated. " +
         "Be a strict marker. Band 3 is competent entry-level work. Band 4 is rare and means work that a senior reviewer would accept with no changes. " +
         "Check logic as well as form: a query that runs but does not answer the brief cannot earn band 3. " +
+        "Before choosing a band, look hard for flaws such as wrong edge cases, unstated assumptions, missing validation or unsupported conclusions, and list each one. " +
         "For every criterion, give a band from 0 to 4, a rationale of one or two sentences, " +
         "and copy the single most relevant passage word for word as the excerpt. " +
         DATA_RULE,
@@ -59,7 +61,7 @@ export async function POST(request: Request) {
         criterionId: criterion.id,
         competencyId: criterion.competencyId,
         criterion: criterion.criterion,
-        score: verified && graded ? clampScore(graded.band, 4) * 25 : 0,
+        score: verified && graded ? cappedBand(graded.band, graded.weaknesses.length) * 25 : 0,
         rationale: graded
           ? verified
             ? graded.rationale
@@ -98,8 +100,8 @@ export async function POST(request: Request) {
         createdAt,
       }));
 
-    const student = getStudent();
-    saveStudent({
+    const student = (await getStudent());
+    await saveStudent({
       ...student,
       evaluations: [...student.evaluations, evaluation],
       evidence: [...student.evidence, ...evidence],

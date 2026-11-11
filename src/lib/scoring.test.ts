@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { claimVerdict, clampScore, competencyScore, defenceResult, gapRows, isGrounded, readiness, readinessHistory, skillTrust } from "./scoring";
+import { cappedBand, claimVerdict, clampScore, competencyScore, defenceResult, gapRows, isGrounded, readiness, readinessHistory, skillTrust } from "./scoring";
 import type { Evidence } from "./types";
 
 const ev = (over: Partial<Evidence>): Evidence => ({
@@ -114,6 +114,15 @@ describe("project defence", () => {
     expect(skillTrust([], claims, "python")).toBe("No evidence");
     expect(skillTrust([ev({}), ev({ source: "project", defence: "defended" })], [], "python")).toBe("Defended");
     expect(skillTrust([ev({}), ev({ source: "project", defence: "failed" })], [], "python")).toBe("Assessed");
+  });
+});
+
+describe("cappedBand", () => {
+  it("reserves full marks for work with no listed weaknesses", () => {
+    expect(cappedBand(4, 0)).toBe(4);
+    expect(cappedBand(4, 2)).toBe(3);
+    expect(cappedBand(2, 1)).toBe(2);
+    expect(cappedBand(9, 0)).toBe(4);
   });
 });
 

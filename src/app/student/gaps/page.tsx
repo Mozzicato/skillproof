@@ -4,8 +4,8 @@ import { PROJECTS, competency, role } from "@/lib/framework";
 import { gapRows } from "@/lib/scoring";
 import { getStudent } from "@/lib/store";
 
-export default function GapsPage() {
-  const student = getStudent();
+export default async function GapsPage() {
+  const student = (await getStudent());
   const target = role(student.targetRoleId);
   const rows = gapRows(target.requirements, student.evidence, student.claims);
   return (

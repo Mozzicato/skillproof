@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     if (topics.length === 0) {
       return NextResponse.json({ error: "No skills SkillProof measures were found in this syllabus." }, { status: 422 });
     }
-    saveCurriculum(parsed.data.department, topics);
+    await saveCurriculum(parsed.data.department, topics);
     return NextResponse.json({ topics: topics.length });
   } catch (error) {
     return aiErrorResponse(error);

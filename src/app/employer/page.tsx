@@ -3,8 +3,10 @@ import { CompetencyPicker, EmployerAdvertSearch } from "@/components/client";
 import { COHORT_SIZE, DEPARTMENTS, cohort } from "@/lib/cohort";
 import { COMPETENCIES, competency } from "@/lib/framework";
 import { competencyScore } from "@/lib/scoring";
-import { getStudent } from "@/lib/store";
-import { COMPETENCY_IDS, type CompetencyId } from "@/lib/types";
+import { SiteHeader } from "@/components/SiteHeader";
+import { seedStudent } from "@/lib/seed";
+import { accountStudents } from "@/lib/store";
+import { COMPETENCY_IDS, type CompetencyId, type Student } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +15,7 @@ interface Row {
   name: string;
   department: string;
   scores: Partial<Record<CompetencyId, number>>;
-  real: boolean;
+  kind: "account" | "sample" | "simulated";
 }
 
 type Search = Promise<{ skill?: string | string[]; min?: string; department?: string }>;
@@ -25,27 +27,28 @@ export default async function EmployerPage({ searchParams }: { searchParams: Sea
   const min = [40, 50, 60, 70, 80].includes(Number(params.min)) ? Number(params.min) : 50;
   const department = DEPARTMENTS.some((d) => d.name === params.department) ? params.department! : "";
 
-  const student = getStudent();
-  const sampleStudent: Row = {
-    id: student.id,
-    name: student.name,
-    department: student.department,
-    real: true,
-    scores: Object.fromEntries(COMPETENCY_IDS.map((id) => [id, competencyScore(student.evidence, id) ?? 0])),
-  };
-  const pool: Row[] = [sampleStudent, ...cohort().map((s) => ({ ...s, real: false }))];
+  const toRow = (s: Student, kind: Row["kind"]): Row => ({
+    id: s.id,
+    name: s.name,
+    department: s.department,
+    kind,
+    scores: Object.fromEntries(COMPETENCY_IDS.map((id) => [id, competencyScore(s.evidence, id) ?? 0])),
+  });
+  const accounts = (await accountStudents()).filter((s) => s.evidence.length > 0).map((s) => toRow(s, "account"));
+  const pool: Row[] = [...accounts, toRow(seedStudent(), "sample"), ...cohort().map((s) => ({ ...s, kind: "simulated" as const }))];
+  const rank = { account: 0, sample: 1, simulated: 2 };
   const average = (r: Row) => skills.reduce((acc, id) => acc + (r.scores[id] ?? 0), 0) / Math.max(skills.length, 1);
   const matches = pool
     .filter((r) => (!department || r.department === department) && skills.every((id) => (r.scores[id] ?? 0) >= min))
-    .sort((a, b) => Number(b.real) - Number(a.real) || average(b) - average(a));
+    .sort((a, b) => rank[a.kind] - rank[b.kind] || average(b) - average(a));
 
   return (
     <>
-      <div className="topbar row between"><Link href="/" className="brand">SkillProof</Link><span>Employer dashboard</span></div>
-      <main className="wide stack-lg">
+      <SiteHeader section="Employer dashboard" />
+      <main className="wide-page"><div className="wide stack-lg">
         <header className="page-head">
           <h1>Find graduates by what they can do</h1>
-          <p className="notice">Results include {COHORT_SIZE.toLocaleString()} simulated students. Only {student.name}, the sample student, has a full evidence portfolio.</p>
+          <p className="notice">Students with their own accounts are listed first, with full portfolios. The {COHORT_SIZE.toLocaleString()} simulated students fill out the search to show how it works at scale.</p>
         </header>
 
         <form className="panel stack" method="get">
@@ -88,14 +91,23 @@ export default async function EmployerPage({ searchParams }: { searchParams: Sea
                     <td>{r.name}</td>
                     <td>{r.department}</td>
                     {skills.map((id) => <td key={id} className="num">{r.scores[id]}</td>)}
-                    <td>{r.real ? <Link href={`/p/${r.id}`}>View portfolio</Link> : <span className="muted small">Simulated</span>}</td>
+                    <td>
+                      {r.kind === "simulated" ? (
+                        <span className="badge">Simulated</span>
+                      ) : (
+                        <span className="row" style={{ gap: "0.5rem" }}>
+                          <Link href={`/p/${r.id}`}>View portfolio</Link>
+                          <span className={`badge ${r.kind === "account" ? "good" : "judge"}`}>{r.kind === "account" ? "Registered" : "Judge demo"}</span>
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
         </section>
-      </main>
+      </div></main>
     </>
   );
 }

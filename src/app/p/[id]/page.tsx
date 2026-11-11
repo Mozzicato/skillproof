@@ -3,14 +3,15 @@ import { notFound } from "next/navigation";
 import { EvidenceItem } from "@/components/ui";
 import { COMPETENCIES } from "@/lib/framework";
 import { competencyScore, levelName, newestFirst } from "@/lib/scoring";
-import { getStudent } from "@/lib/store";
+import { findStudent } from "@/lib/store";
+import { SiteHeader } from "@/components/SiteHeader";
 
 export const dynamic = "force-dynamic";
 
 export default async function PortfolioPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const student = getStudent();
-  if (id !== student.id) notFound();
+  const student = await findStudent(id);
+  if (!student) notFound();
 
   const proven = COMPETENCIES.flatMap((c) => {
     const score = competencyScore(student.evidence, c.id);
@@ -19,8 +20,8 @@ export default async function PortfolioPage({ params }: { params: Promise<{ id: 
 
   return (
     <>
-      <div className="topbar"><Link href="/" className="brand">SkillProof</Link></div>
-      <main className="wide stack-lg" style={{ maxWidth: 900 }}>
+      <SiteHeader section="Evidence portfolio" />
+      <main className="wide-page"><div className="wide stack-lg" style={{ maxWidth: 900 }}>
         <header className="page-head">
           <h1>{student.name}</h1>
           <p className="muted">{student.department}, {student.university}. Every score links to the work behind it.</p>
@@ -41,7 +42,7 @@ export default async function PortfolioPage({ params }: { params: Promise<{ id: 
             </section>
           );
         })}
-      </main>
+      </div></main>
     </>
   );
 }

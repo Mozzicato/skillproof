@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono, Outfit, Work_Sans } from "next/font/google";
 import "./globals.css";
 
-const display = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-display" });
-const body = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-body" });
+const display = Outfit({ subsets: ["latin"], variable: "--font-display" });
+const body = Work_Sans({ subsets: ["latin"], variable: "--font-body" });
 const code = JetBrains_Mono({ subsets: ["latin"], variable: "--font-code" });
 
 export const metadata: Metadata = {

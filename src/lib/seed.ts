@@ -20,9 +20,9 @@ def clean(df):
 Note for the shop: I removed duplicate rows and fixed dates.`;
 
 /** A sample student part-way through the cycle, so every screen has something to show. */
-export function seedStudent(): Student {
+export function seedStudent(id: string = DEMO_STUDENT_ID): Student {
   return {
-    id: DEMO_STUDENT_ID,
+    id,
     name: "Sam Okoro",
     department: "Statistics",
     university: "Sample University",

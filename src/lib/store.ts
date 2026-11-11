@@ -1,61 +1,108 @@
-import fs from "node:fs";
-import path from "node:path";
-import { seedStudent } from "./seed";
+import { cookies } from "next/headers";
+import { cache } from "react";
+import { currentUser, type User } from "./auth";
+import { kv } from "./db";
+import { DEMO_STUDENT_ID, seedStudent } from "./seed";
+import { SESSION_COOKIE } from "./session";
 import type { Curricula, Student } from "./types";
 
-const FILE = path.join(process.cwd(), ".data", "store.json");
-
-interface AppData {
+interface Workspace {
   student: Student;
   curricula: Curricula;
 }
 
-// Next.js can load this module more than once in development, so the copy lives on globalThis.
-const holder = globalThis as unknown as { skillproofData?: AppData };
-
-function data(): AppData {
-  if (holder.skillproofData) return holder.skillproofData;
-  try {
-    const parsed = JSON.parse(fs.readFileSync(FILE, "utf8")) as Partial<AppData>;
-    if (parsed.student) {
-      holder.skillproofData = { student: parsed.student, curricula: parsed.curricula ?? {} };
-      return holder.skillproofData;
-    }
-  } catch {
-    // No saved data yet, so fall through to the sample data.
-  }
-  holder.skillproofData = { student: seedStudent(), curricula: {} };
-  return holder.skillproofData;
+export interface Viewer {
+  mode: "account" | "demo";
+  user: User | null;
 }
 
-function write(next: AppData): void {
-  holder.skillproofData = next;
-  try {
-    fs.mkdirSync(path.dirname(FILE), { recursive: true });
-    fs.writeFileSync(FILE, JSON.stringify(next, null, 2));
-  } catch (error) {
-    // Read-only hosts keep the data in memory for the life of the server.
-    console.warn("Could not write data to disk:", error);
-  }
+function shortId(): string {
+  return crypto.randomUUID().slice(0, 8);
 }
 
-export function getStudent(): Student {
-  return data().student;
+function slug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30) || "student";
 }
 
-export function saveStudent(student: Student): void {
-  write({ ...data(), student });
+/** Signed-in people use their account's workspace. Everyone else gets a private copy of the judge demo. */
+const workspaceKey = cache(async (): Promise<string> => {
+  const user = await currentUser();
+  if (user) return `u:${user.id}`;
+  const session = (await cookies()).get(SESSION_COOKIE)?.value;
+  if (!session) throw new Error("No session cookie on this request.");
+  return `d:${session}`;
+});
+
+async function writeWorkspace(key: string, workspace: Workspace): Promise<void> {
+  await kv.set("workspace", key, workspace);
+  await kv.set("portfolio", workspace.student.id, { workspace: key });
 }
 
-export function getCurricula(): Curricula {
-  return data().curricula;
+const currentWorkspace = cache(async (): Promise<Workspace> => {
+  const key = await workspaceKey();
+  const existing = await kv.get<Workspace>("workspace", key);
+  if (existing) return existing;
+  const created: Workspace = { student: seedStudent(`${DEMO_STUDENT_ID}-${shortId()}`), curricula: {} };
+  await writeWorkspace(key, created);
+  return created;
+});
+
+export async function getViewer(): Promise<Viewer> {
+  const user = await currentUser();
+  return { mode: user ? "account" : "demo", user };
 }
 
-export function saveCurriculum(department: string, topics: Curricula[string]): void {
-  const current = data();
-  write({ ...current, curricula: { ...current.curricula, [department]: topics } });
+export async function getStudent(): Promise<Student> {
+  return (await currentWorkspace()).student;
 }
 
-export function resetStudent(): void {
-  write({ student: seedStudent(), curricula: {} });
+export async function getCurricula(): Promise<Curricula> {
+  return (await currentWorkspace()).curricula;
+}
+
+export async function saveStudent(student: Student): Promise<void> {
+  await writeWorkspace(await workspaceKey(), { ...(await currentWorkspace()), student });
+}
+
+export async function saveCurriculum(department: string, topics: Curricula[string]): Promise<void> {
+  const current = await currentWorkspace();
+  await writeWorkspace(await workspaceKey(), { ...current, curricula: { ...current.curricula, [department]: topics } });
+}
+
+/** Only the judge demo can be reset, so nobody wipes a real account by accident. */
+export async function resetDemo(): Promise<boolean> {
+  if (await currentUser()) return false;
+  const current = await currentWorkspace();
+  await writeWorkspace(await workspaceKey(), { student: seedStudent(current.student.id), curricula: {} });
+  return true;
+}
+
+/** A new account starts with no evidence at all. */
+export async function createAccountWorkspace(userId: string, details: { name: string; department: string; university: string; targetRoleId: string }): Promise<void> {
+  await writeWorkspace(`u:${userId}`, {
+    curricula: {},
+    student: {
+      id: `${slug(details.name)}-${shortId()}`,
+      name: details.name.trim(),
+      department: details.department,
+      university: details.university.trim(),
+      targetRoleId: details.targetRoleId,
+      claims: [],
+      evidence: [],
+      evaluations: [],
+      cvFeedback: null,
+    },
+  });
+}
+
+/** Public portfolios are looked up by student id, which is separate from the private session. */
+export async function findStudent(studentId: string): Promise<Student | null> {
+  if (studentId === DEMO_STUDENT_ID) return seedStudent();
+  const entry = await kv.get<{ workspace: string }>("portfolio", studentId);
+  return entry ? ((await kv.get<Workspace>("workspace", entry.workspace))?.student ?? null) : null;
+}
+
+/** Students with their own accounts, for the employer search. */
+export async function accountStudents(): Promise<Student[]> {
+  return (await kv.list<Workspace>("workspace", "u:")).map((w) => w.student);
 }

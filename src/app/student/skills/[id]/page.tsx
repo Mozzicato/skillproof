@@ -9,7 +9,7 @@ export default async function SkillPage({ params }: { params: Promise<{ id: stri
   const skill = COMPETENCIES.find((c) => c.id === id);
   if (!skill) notFound();
 
-  const student = getStudent();
+  const student = (await getStudent());
   const items = newestFirst(student.evidence).filter((e) => e.competencyId === skill.id);
   const score = competencyScore(student.evidence, skill.id);
   const claim = student.claims.find((c) => c.competencyId === skill.id);

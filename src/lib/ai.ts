@@ -6,6 +6,7 @@ import { z } from "zod";
 
 const CLAUDE_MODEL = "claude-opus-5-5";
 const GROQ_MODEL = "openai/gpt-oss-120b";
+const GROQ_ATTEMPTS = 3;
 
 /** If Claude declines a request, the API retries it on a fallback model. */
 const REFUSAL_FALLBACK = {
@@ -58,37 +59,38 @@ async function structuredClaude<S extends z.ZodType>(system: string, user: strin
 }
 
 async function structuredGroq<S extends z.ZodType>(system: string, user: string, schema: S): Promise<z.infer<S>> {
-  const request = () =>
-    new Groq().chat.completions.create({
-      model: GROQ_MODEL,
-      max_completion_tokens: 12000,
-      reasoning_effort: "medium",
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: { name: "result", schema: z.toJSONSchema(schema) as Record<string, unknown>, strict: true },
-      },
-    });
-
-  let completion;
-  try {
-    completion = await request();
-  } catch (error) {
-    // Groq rejects a reply that breaks the schema, and a second attempt usually succeeds.
-    if (!(error instanceof Groq.BadRequestError)) throw error;
-    completion = await request();
+  // Not strict, because Groq then rejects whole replies over small shape slips. The reply is validated here instead.
+  for (let attempt = 0; attempt < GROQ_ATTEMPTS; attempt++) {
+    try {
+      const completion = await new Groq().chat.completions.create({
+        model: GROQ_MODEL,
+        max_completion_tokens: 12000,
+        reasoning_effort: "medium",
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: { name: "result", schema: z.toJSONSchema(schema) as Record<string, unknown>, strict: false },
+        },
+      });
+      const parsed = schema.safeParse(unwrapItems(JSON.parse(completion.choices[0]?.message.content ?? "")));
+      if (parsed.success) return parsed.data;
+    } catch (error) {
+      if (!(error instanceof Groq.BadRequestError || error instanceof SyntaxError)) throw error;
+    }
   }
+  throw new AiError("The AI returned an incomplete result. Try again.", 502);
+}
 
-  const choice = completion.choices[0];
-  if (choice?.finish_reason === "length" || !choice?.message.content) {
-    throw new AiError("The AI returned an incomplete result. Try again.", 502);
-  }
-  const parsed = schema.safeParse(JSON.parse(choice.message.content));
-  if (!parsed.success) throw new AiError("The AI returned an incomplete result. Try again.", 502);
-  return parsed.data;
+/** gpt-oss sometimes returns a list as {"items": [...]}. */
+export function unwrapItems(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(unwrapItems);
+  if (value === null || typeof value !== "object") return value;
+  const entries = Object.entries(value);
+  if (entries.length === 1 && entries[0][0] === "items" && Array.isArray(entries[0][1])) return unwrapItems(entries[0][1]);
+  return Object.fromEntries(entries.map(([key, inner]) => [key, unwrapItems(inner)]));
 }
 
 export async function structured<S extends z.ZodType>(options: {

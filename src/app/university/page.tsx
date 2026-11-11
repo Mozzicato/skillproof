@@ -10,6 +10,7 @@ import {
   percentAtLeast,
 } from "@/lib/cohort";
 import { CurriculumForm } from "@/components/client";
+import { SiteHeader } from "@/components/SiteHeader";
 import { COMPETENCIES, JOBS, competency } from "@/lib/framework";
 import { getCurricula } from "@/lib/store";
 import type { CompetencyId } from "@/lib/types";
@@ -20,15 +21,15 @@ export const dynamic = "force-dynamic";
 function heat(value: number) {
   const t = Math.min(value, 90) / 90;
   return {
-    background: `color-mix(in oklab, #2f55d4 ${Math.round(t * 88 + 6)}%, white)`,
-    color: t > 0.55 ? "#fff" : "#18245e",
+    background: `color-mix(in oklab, #0d9488 ${Math.round(t * 88 + 6)}%, white)`,
+    color: t > 0.85 ? "#fff" : "#0b302d",
   };
 }
 
-export default function UniversityPage() {
+export default async function UniversityPage() {
   const students = cohort();
   const strongCommunicators = students.filter((s) => s.scores.communication >= 70).length;
-  const curricula = getCurricula();
+  const curricula = await getCurricula();
   const taughtIn = (d: (typeof DEPARTMENTS)[number]) => curricula[d.name]?.map((t) => t.competencyId) ?? d.taught;
   const untaughtCount = (id: CompetencyId) => DEPARTMENTS.filter((d) => !taughtIn(d).includes(id)).length;
   const mapped = DEPARTMENTS.filter((d) => curricula[d.name]);
@@ -38,8 +39,8 @@ export default function UniversityPage() {
 
   return (
     <>
-      <div className="topbar row between"><Link href="/" className="brand">SkillProof</Link><span>University dashboard</span></div>
-      <main className="wide stack-lg">
+      <SiteHeader section="University dashboard" />
+      <main className="wide-page"><div className="wide stack-lg">
         <header className="page-head">
           <h1>Sample University: career readiness</h1>
           <p className="notice">This dashboard uses a simulated cohort of {COHORT_SIZE.toLocaleString()} students to show how the view works at scale.</p>
@@ -118,7 +119,7 @@ export default function UniversityPage() {
             </tbody>
           </table>
         </section>
-      </main>
+      </div></main>
     </>
   );
 }

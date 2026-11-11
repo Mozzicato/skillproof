@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   const answers = parsed.data.messages.filter((m) => m.role === "user").slice(1).map((m) => m.content);
   if (answers.length === 0) return NextResponse.json({ error: "Answer at least one question first." }, { status: 400 });
 
-  const student = getStudent();
+  const student = (await getStudent());
   const target = role(student.targetRoleId);
   const allowed = target.requirements.map((r) => r.competencyId);
 
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
         createdAt,
       }));
 
-    saveStudent({ ...student, evidence: [...student.evidence, ...evidence] });
+    await saveStudent({ ...student, evidence: [...student.evidence, ...evidence] });
     return NextResponse.json({
       feedback: review.feedback,
       skills: evidence.map((e) => ({ name: competency(e.competencyId).name, score: e.score, rationale: e.rationale })),
