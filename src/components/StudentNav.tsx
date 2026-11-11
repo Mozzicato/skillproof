@@ -2,7 +2,9 @@
 
 import {
   Briefcase,
+  CalendarCheck,
   ClipboardCheck,
+  QrCode,
   FileText,
   FolderKanban,
   LayoutDashboard,
@@ -22,6 +24,7 @@ const LINKS: Record<CycleStep["name"], { href: string; label: string; icon: Luci
   Assess: [{ href: "/student/assessment", label: "Career assessment", icon: ClipboardCheck }],
   Identify: [{ href: "/student/gaps", label: "Skill gaps", icon: Target }],
   Develop: [
+    { href: "/student/plan", label: "Sprint plan", icon: CalendarCheck },
     { href: "/student/coach", label: "Career coach", icon: MessageCircle },
     { href: "/student/projects", label: "Recommended projects", icon: FolderKanban },
   ],
@@ -31,6 +34,7 @@ const LINKS: Record<CycleStep["name"], { href: string; label: string; icon: Luci
   ],
   Reassess: [{ href: "/student/progress", label: "Progress", icon: TrendingUp }],
   Connect: [
+    { href: "/student/passport", label: "Skill Passport", icon: QrCode },
     { href: "/student/opportunities", label: "Jobs and internships", icon: Briefcase },
     { href: "/student/resume", label: "CV", icon: FileText },
   ],

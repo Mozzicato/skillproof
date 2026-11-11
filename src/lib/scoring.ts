@@ -9,6 +9,7 @@ import type {
   Project,
   Requirement,
   Role,
+  Sprint,
   Student,
 } from "./types";
 
@@ -172,11 +173,112 @@ export function cycleStatus(role: Role, student: Student): CycleStep[] {
   return [
     { name: "Assess", done: assessed },
     { name: "Identify", done: assessed },
-    { name: "Develop", done: student.evaluations.length > 0 },
+    { name: "Develop", done: Boolean(student.sprint) || student.evaluations.length > 0 },
     { name: "Demonstrate", done: demonstrated },
     { name: "Reassess", done: assessmentDays.size > 1 },
-    { name: "Connect", done: matched },
+    { name: "Connect", done: matched || (student.endorsements?.length ?? 0) > 0 },
   ];
+}
+
+/** Points a student can typically add to one skill in a week of focused practice. An estimate, shown as one. */
+export const POINTS_PER_WEEK = 10;
+
+export interface GapPriority extends GapRow {
+  /** Vacancies that ask for this skill at all. */
+  demand: Job[];
+  /** Vacancies where this skill is the only thing missing, so closing it makes the student eligible. */
+  unlocks: Job[];
+  /** Vacancies the student does not yet qualify for partly because of this skill. */
+  blocks: JobMatch[];
+  weeks: number;
+}
+
+export function gapValue(gap: Pick<GapPriority, "unlocks" | "blocks" | "demand">): number {
+  return gap.unlocks.length * 3 + gap.blocks.length * 2 + gap.demand.length;
+}
+
+/** Gaps ordered by what closing them is worth: jobs it alone unlocks, then jobs it holds back, then how often it is asked for. */
+export function gapPriorities(role: Role, student: Student): GapPriority[] {
+  const matches = jobMatches(student.evidence);
+  return gapRows(role.requirements, student.evidence, student.claims)
+    .filter((row) => row.shortfall > 0)
+    .map((row) => {
+      const blocks = matches.filter((m) => m.missing.some((r) => r.competencyId === row.competencyId));
+      return {
+        ...row,
+        demand: JOBS.filter((j) => j.requirements.some((r) => r.competencyId === row.competencyId)),
+        unlocks: blocks.filter((m) => m.missing.length === 1).map((m) => m.job),
+        blocks,
+        weeks: Math.max(1, Math.ceil(row.shortfall / POINTS_PER_WEEK)),
+      };
+    })
+    .sort((a, b) => gapValue(b) - gapValue(a) || b.shortfall - a.shortfall);
+}
+
+export const SPRINT_DAYS = 14;
+
+/** The sprint SkillProof suggests: the most valuable gap, and the project criterion that would prove it. */
+export function proposeSprint(role: Role, student: Student): Omit<Sprint, "startedAt" | "dueAt"> | null {
+  const done = new Set(student.evaluations.map((e) => e.projectId));
+  for (const gap of gapPriorities(role, student)) {
+    const candidates = PROJECTS.filter((p) => p.rubric.some((c) => c.competencyId === gap.competencyId));
+    const pick = candidates.find((p) => !done.has(p.id)) ?? candidates[0];
+    if (!pick) continue;
+    const criterion = pick.rubric.find((c) => c.competencyId === gap.competencyId)!;
+    return { competencyId: gap.competencyId, projectId: pick.id, criterionId: criterion.id, target: gap.required };
+  }
+  return null;
+}
+
+export interface SprintStep {
+  label: string;
+  done: boolean;
+}
+
+/** Each step of a sprint is ticked by evidence, never by the student saying it is done. */
+export function sprintSteps(sprint: Sprint, student: Student, projectTitle: string, criterion: string): SprintStep[] {
+  const latest = student.evaluations
+    .filter((e) => e.projectId === sprint.projectId && e.createdAt >= sprint.startedAt)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+  const result = latest?.results.find((r) => r.criterionId === sprint.criterionId);
+  const outcome = latest?.defence?.outcomes.find((o) => o.criterionId === sprint.criterionId);
+  const reassessed = (student.assessments ?? []).some(
+    (run) => run.createdAt >= sprint.startedAt && run.skills.some((s) => s.competencyId === sprint.competencyId),
+  );
+  return [
+    { label: `Submit “${projectTitle}”`, done: Boolean(latest) },
+    { label: `Score ${sprint.target} or more on: ${criterion}`, done: (result?.score ?? 0) >= sprint.target },
+    { label: "Defend that work in three questions", done: outcome?.result === "defended" },
+    { label: "Reassess to confirm the change", done: reassessed },
+  ];
+}
+
+/** Evidence older than this is flagged so students re-prove it. Scores are not reduced; the date is shown. */
+export const STALE_AFTER_DAYS = 60;
+
+export function lastProven(evidence: Evidence[], id: CompetencyId): string | null {
+  return newestFirst(evidence).find((e) => e.competencyId === id)?.createdAt ?? null;
+}
+
+export function daysSince(iso: string, now = Date.now()): number {
+  return Math.floor((now - new Date(iso).getTime()) / 86_400_000);
+}
+
+export function staleSkills(ids: CompetencyId[], evidence: Evidence[], now = Date.now()): { competencyId: CompetencyId; days: number }[] {
+  return ids.flatMap((id) => {
+    const last = lastProven(evidence, id);
+    const days = last ? daysSince(last, now) : null;
+    return days !== null && days > STALE_AFTER_DAYS ? [{ competencyId: id, days }] : [];
+  });
+}
+
+/** Score on the first day this skill had evidence, against the score now. */
+export function growth(evidence: Evidence[], id: CompetencyId): { from: number; to: number; since: string } | null {
+  const items = evidence.filter((e) => e.competencyId === id);
+  if (items.length === 0) return null;
+  const firstDay = items.map((e) => e.createdAt.slice(0, 10)).sort()[0];
+  const from = competencyScore(items.filter((e) => e.createdAt.slice(0, 10) === firstDay), id)!;
+  return { from, to: competencyScore(items, id)!, since: firstDay };
 }
 
 /**

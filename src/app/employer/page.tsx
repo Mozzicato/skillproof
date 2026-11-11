@@ -6,6 +6,7 @@ import { competencyScore } from "@/lib/scoring";
 import { SiteHeader } from "@/components/SiteHeader";
 import { seedStudent } from "@/lib/seed";
 import { accountStudents } from "@/lib/store";
+import { latestRun } from "@/lib/calibration";
 import { COMPETENCY_IDS, type CompetencyId, type Student } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,8 @@ interface Row {
   department: string;
   scores: Partial<Record<CompetencyId, number>>;
   kind: "account" | "sample" | "simulated";
+  calibration?: number;
+  vouches?: number;
 }
 
 type Search = Promise<{ skill?: string | string[]; min?: string; department?: string }>;
@@ -33,6 +36,8 @@ export default async function EmployerPage({ searchParams }: { searchParams: Sea
     department: s.department,
     kind,
     scores: Object.fromEntries(COMPETENCY_IDS.map((id) => [id, competencyScore(s.evidence, id) ?? 0])),
+    calibration: latestRun(s.assessments)?.calibration,
+    vouches: s.endorsements?.length ?? 0,
   });
   const accounts = (await accountStudents()).filter((s) => s.evidence.length > 0).map((s) => toRow(s, "account"));
   const pool: Row[] = [...accounts, toRow(seedStudent(), "sample"), ...cohort().map((s) => ({ ...s, kind: "simulated" as const }))];
@@ -83,7 +88,7 @@ export default async function EmployerPage({ searchParams }: { searchParams: Sea
           ) : (
             <table style={{ marginTop: "0.75rem" }}>
               <thead>
-                <tr><th>Candidate</th><th>Department</th>{skills.map((id) => <th key={id} className="num">{competency(id).name}</th>)}<th>Evidence</th></tr>
+                <tr><th>Candidate</th><th>Department</th>{skills.map((id) => <th key={id} className="num">{competency(id).name}</th>)}<th className="num">Self-awareness</th><th className="num">Confirmed by people</th><th>Evidence</th></tr>
               </thead>
               <tbody>
                 {matches.slice(0, 25).map((r) => (
@@ -91,6 +96,8 @@ export default async function EmployerPage({ searchParams }: { searchParams: Sea
                     <td>{r.name}</td>
                     <td>{r.department}</td>
                     {skills.map((id) => <td key={id} className="num">{r.scores[id]}</td>)}
+                    <td className="num">{r.calibration ?? "–"}</td>
+                    <td className="num">{r.kind === "simulated" ? "–" : r.vouches}</td>
                     <td>
                       {r.kind === "simulated" ? (
                         <span className="badge">Simulated</span>

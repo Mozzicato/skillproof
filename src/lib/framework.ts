@@ -1,4 +1,4 @@
-import type { Competency, CompetencyId, Job, Project, Question, Role } from "./types";
+import type { AssessmentTask, Competency, CompetencyId, Job, Project, Role } from "./types";
 
 export const COMPETENCIES: Competency[] = [
   { id: "python", name: "Python", category: "Technical", description: "Writing correct, readable Python to solve practical problems." },
@@ -49,28 +49,27 @@ export function role(id: string): Role {
   return ROLES.find((r) => r.id === id) ?? ROLES[0];
 }
 
-export const QUESTIONS: Question[] = [
-  { id: "py1", competencyId: "python", prompt: "What does [x * 2 for x in range(3)] evaluate to?", options: ["[0, 2, 4]", "[2, 4, 6]", "[0, 1, 2, 0, 1, 2]", "[1, 2, 3]"], answerIndex: 0 },
-  { id: "py2", competencyId: "python", prompt: "A function is defined as def add(item, items=[]): items.append(item); return items. What goes wrong when it is called twice with one argument?", options: ["It raises a TypeError", "The second call returns both items, because the default list is shared", "The second call returns an empty list", "Nothing goes wrong"], answerIndex: 1 },
-  { id: "js1", competencyId: "javascript", prompt: "What does [1, 2, 3].map(n => n + 1) return?", options: ["6", "[2, 3, 4]", "[1, 2, 3]", "undefined"], answerIndex: 1 },
-  { id: "js2", competencyId: "javascript", prompt: "What does an async function always return?", options: ["The raw value", "A callback", "A Promise", "undefined"], answerIndex: 2 },
-  { id: "sql1", competencyId: "sql", prompt: "Which join keeps every customer, including customers with no orders?", options: ["INNER JOIN orders", "customers LEFT JOIN orders", "customers RIGHT JOIN orders, keeping only order rows", "CROSS JOIN orders"], answerIndex: 1 },
-  { id: "sql2", competencyId: "sql", prompt: "You need only the departments whose total salary is above 100000. Where does that condition go?", options: ["WHERE SUM(salary) > 100000", "ORDER BY SUM(salary)", "HAVING SUM(salary) > 100000", "ON SUM(salary) > 100000"], answerIndex: 2 },
-  { id: "dw1", competencyId: "data-wrangling", prompt: "A column of ages contains 34, 29, -1 and 999. What should you do first?", options: ["Average it anyway", "Delete the column", "Investigate the invalid values and decide on a documented rule", "Replace everything with zero"], answerIndex: 2 },
-  { id: "dw2", competencyId: "data-wrangling", prompt: "After merging two tables, the row count is much higher than either table. What is the most likely cause?", options: ["Duplicate keys in the join column", "Too many columns", "Missing values in an unrelated column", "The file was sorted"], answerIndex: 0 },
-  { id: "vz1", competencyId: "visualisation", prompt: "Which chart best shows monthly revenue across two years?", options: ["Pie chart", "Line chart", "Scatter plot of random samples", "A 3D donut"], answerIndex: 1 },
-  { id: "vz2", competencyId: "visualisation", prompt: "Why should a bar chart's value axis start at zero?", options: ["It looks tidier", "Bar length encodes the value, so a cut axis exaggerates differences", "Software requires it", "It makes labels shorter"], answerIndex: 1 },
-  { id: "st1", competencyId: "statistics", prompt: "Salaries in a team are heavily skewed by one executive. Which figure best describes a typical salary?", options: ["Mean", "Maximum", "Median", "Range"], answerIndex: 2 },
-  { id: "st2", competencyId: "statistics", prompt: "Ice cream sales and drowning incidents rise together. What is the best conclusion?", options: ["Ice cream causes drowning", "Drowning causes ice cream sales", "A third factor such as hot weather may explain both", "The data must be wrong"], answerIndex: 2 },
-  { id: "gt1", competencyId: "git-testing", prompt: "You want to work on a feature without affecting main. What do you do?", options: ["Edit main directly and undo later", "Create a branch", "Delete the repository and clone again", "Commit to a tag"], answerIndex: 1 },
-  { id: "gt2", competencyId: "git-testing", prompt: "What is the main value of a regression test?", options: ["It makes code run faster", "It proves that a fixed bug does not return", "It replaces code review", "It formats the code"], answerIndex: 1 },
-  { id: "cm1", competencyId: "communication", prompt: "A manager with no technical background asks for your analysis. What do you lead with?", options: ["The finding and what it means for their decision", "The code you wrote", "The full list of data cleaning steps", "The statistical test names"], answerIndex: 0 },
-  { id: "cm2", competencyId: "communication", prompt: "You realise you will miss a deadline by two days. What is the best action?", options: ["Say nothing and work faster", "Tell the team now, with the reason and a new date", "Hand in incomplete work without comment", "Wait for someone to ask"], answerIndex: 1 },
-  { id: "ps1", competencyId: "problem-solving", prompt: "A report that worked yesterday now shows zero sales. What do you check first?", options: ["Rewrite the report", "Whether the input data arrived and what changed since yesterday", "Change the chart colours", "Ask for a new computer"], answerIndex: 1 },
-  { id: "ps2", competencyId: "problem-solving", prompt: "A task feels too large to estimate. What is the most useful next step?", options: ["Pick a number at random", "Break it into smaller parts and estimate those", "Start at the hardest line of code", "Decline the task"], answerIndex: 1 },
-  { id: "dl1", competencyId: "digital-literacy", prompt: "An email asks you to confirm your university password through a link. What should you do?", options: ["Enter it quickly", "Forward it to classmates", "Report it and go to the official site directly", "Reply with your password"], answerIndex: 2 },
-  { id: "dl2", competencyId: "digital-literacy", prompt: "You are sharing a dataset containing names and phone numbers for a class project. What should you do?", options: ["Post it publicly", "Remove or anonymise the personal details first", "Rename the file", "Convert it to a PDF"], answerIndex: 1 },
+/** One short applied task per role, graded by AI, so the assessment is more than recognition. */
+export const ASSESSMENT_TASKS: AssessmentTask[] = [
+  {
+    roleId: "data-analyst",
+    competencyId: "sql",
+    prompt:
+      "Tables: customers(id, name) and orders(id, customer_id, order_date, total). Write a query that lists every customer with their total spend in 2026, highest first, including customers who spent nothing. Then state one assumption you made.",
+    criterion: "The query uses a correct join, date filter and grouping, keeps customers with no 2026 orders, and states a reasonable assumption.",
+  },
+  {
+    roleId: "software-developer",
+    competencyId: "javascript",
+    prompt:
+      "Write a JavaScript function overdue(tasks, today) that returns the titles of tasks that are not done and whose dueDate is before today. Each task looks like { title, done, dueDate } with ISO date strings. Add one test case.",
+    criterion: "The function is correct, compares dates properly, ignores finished tasks, and the test checks a meaningful case.",
+  },
 ];
+
+export function assessmentTask(roleId: string): AssessmentTask {
+  return ASSESSMENT_TASKS.find((t) => t.roleId === roleId) ?? ASSESSMENT_TASKS[0];
+}
 
 export const PROJECTS: Project[] = [
   {

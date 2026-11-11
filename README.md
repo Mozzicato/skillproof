@@ -24,6 +24,15 @@ Sam Okoro is a sample student. The 2,000 students on the university and employer
 - After a project is evaluated, the student can defend it by answering three questions about their own submission, once per submission. Defended work counts for more. Work the student cannot explain is capped at 25.
 - Every skill shows the strongest proof behind it: Defended, AI-evaluated, Assessed, Could not defend, or Claimed only.
 
+## The cycle, stage by stage
+
+- **Assess.** The student rates each skill first, then answers adaptive questions. Each skill starts with a medium question and moves to a hard or easy one. The student says how sure they are of every answer. Lucky guesses count for less, and confident mistakes cost more. The result includes a self-awareness score showing how closely confidence matched results, and one AI-graded applied task. The answers and the difficulty never leave the server (`src/lib/questions.ts`), and the server rejects any answers that do not follow the adaptive path.
+- **Identify.** Gaps are ranked by what closing them is worth: first vacancies where the gap is the only thing missing, then vacancies it holds the student back from, then how often it is asked for.
+- **Develop.** A two-week sprint names the gap and the exact proof that will close it, which is a project criterion score, a defence and a reassessment. Each step is ticked only when the evidence arrives.
+- **Demonstrate.** Project work can be imported from a public GitHub repository, including recent commit messages.
+- **Reassess.** Reassessments prefer questions the student has not seen before. Evidence older than 60 days is flagged on the passport until the skill is proven again. The passport shows how much each skill has grown since the first evidence for it.
+- **Connect.** The Skill Passport is a public page with a QR code. A student can send a lecturer, mentor or interviewer a single-use private link to confirm skills they saw. Confirmations are only possible for skills that already have evidence, and they appear on the passport with the person's name and organisation as entered. Employers see self-awareness and confirmations in search results.
+
 ## Checks
 
 ```

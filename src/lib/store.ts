@@ -4,7 +4,7 @@ import { currentUser, type User } from "./auth";
 import { kv } from "./db";
 import { DEMO_STUDENT_ID, seedStudent } from "./seed";
 import { SESSION_COOKIE } from "./session";
-import type { Curricula, Student } from "./types";
+import type { Curricula, Endorsement, EndorserRole, Student } from "./types";
 
 interface Workspace {
   student: Student;
@@ -100,6 +100,38 @@ export async function findStudent(studentId: string): Promise<Student | null> {
   if (studentId === DEMO_STUDENT_ID) return seedStudent();
   const entry = await kv.get<{ workspace: string }>("portfolio", studentId);
   return entry ? ((await kv.get<Workspace>("workspace", entry.workspace))?.student ?? null) : null;
+}
+
+export interface Invite {
+  workspace: string;
+  role: EndorserRole;
+  createdAt: string;
+  usedAt?: string;
+}
+
+/** A private link the student gives to a lecturer, mentor or interviewer so they can vouch for skills. */
+export async function createInvite(role: EndorserRole): Promise<string> {
+  const token = crypto.randomUUID().replaceAll("-", "");
+  await kv.set("invite", token, { workspace: await workspaceKey(), role, createdAt: new Date().toISOString() } satisfies Invite);
+  return token;
+}
+
+export async function openInvite(token: string): Promise<{ invite: Invite; student: Student } | null> {
+  const invite = await kv.get<Invite>("invite", token);
+  if (!invite) return null;
+  const workspace = await kv.get<Workspace>("workspace", invite.workspace);
+  return workspace ? { invite, student: workspace.student } : null;
+}
+
+/** Each link can be used once. Returns false if the link is unknown or already used. */
+export async function addEndorsements(token: string, endorsements: Endorsement[]): Promise<boolean> {
+  const opened = await openInvite(token);
+  if (!opened || opened.invite.usedAt) return false;
+  const workspace = (await kv.get<Workspace>("workspace", opened.invite.workspace))!;
+  const student = { ...workspace.student, endorsements: [...(workspace.student.endorsements ?? []), ...endorsements] };
+  await writeWorkspace(opened.invite.workspace, { ...workspace, student });
+  await kv.set("invite", token, { ...opened.invite, usedAt: new Date().toISOString() });
+  return true;
 }
 
 /** Students with their own accounts, for the employer search. */

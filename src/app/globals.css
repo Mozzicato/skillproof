@@ -298,6 +298,76 @@ tbody tr:hover { background: #f8fcfb; }
 .chart svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
 .chart-tip { position: absolute; top: 0; transform: translateX(-50%); background: var(--fg-strong); color: #fff; font-size: 0.8rem; padding: 0.25rem 0.5rem; border-radius: 6px; pointer-events: none; white-space: nowrap; }
 
+/* Assessment: claim, confidence, task, calibration */
+.step-head { display: grid; gap: 0.4rem; }
+.step-pill { justify-self: start; font-size: 0.8rem; font-weight: 600; color: var(--primary); background: var(--primary-soft); padding: 0.15rem 0.6rem; border-radius: 999px; }
+.claim-sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 0.9rem 1.5rem; }
+.claim-slider { display: grid; gap: 0.35rem; padding: 0.8rem 0.9rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #fff; }
+.claim-slider b { font-family: var(--font-display); font-size: 1.1rem; color: var(--fg-strong); }
+input[type="range"] { width: 100%; accent-color: var(--claimed); min-height: 28px; cursor: pointer; }
+.confidence { display: grid; gap: 0.5rem; }
+.confidence legend { font-weight: 600; color: var(--fg-strong); margin-bottom: 0.5rem; }
+.confidence:disabled { opacity: 0.5; }
+.segmented { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+.segment { position: relative; display: flex; }
+.segment input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.segment span { flex: 1; text-align: center; min-height: 44px; display: grid; place-items: center; padding: 0.4rem 0.6rem; font-weight: 600; border: 1.5px solid var(--border-strong); border-radius: var(--radius-sm); background: #fff; transition: border-color var(--ease), background var(--ease); }
+.segment:hover span { border-color: var(--primary); }
+.segment input:checked + span { background: var(--fg-strong); border-color: var(--fg-strong); color: #fff; }
+.segment input:focus-visible + span { outline: 3px solid var(--secondary); outline-offset: 2px; }
+.task-brief { padding: 1rem 1.1rem; background: var(--muted-bg); border-radius: var(--radius-sm); max-width: none; }
+.calibration { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1.5rem; align-items: center; padding: 1.25rem; border-radius: var(--radius); background: var(--fg-strong); color: #e6fffa; }
+.calibration h2 { color: #fff; }
+.calibration .muted { color: #a7d8d1; }
+.calibration-score { display: grid; justify-items: center; width: 7.5rem; aspect-ratio: 1; align-content: center; border-radius: 50%; border: 6px solid var(--secondary); }
+.calibration-score b { font-family: var(--font-display); font-size: 2.6rem; line-height: 1; color: #fff; }
+.calibration-score span { font-size: 0.78rem; color: #a7d8d1; }
+
+/* Develop: sprint */
+.contract { display: grid; gap: 0.75rem; margin: 0; }
+.contract div { display: grid; grid-template-columns: 11rem minmax(0, 1fr); gap: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+.contract dt { font-weight: 600; color: var(--fg-strong); }
+.contract dd { margin: 0; }
+.sprint-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.sprint-steps li { display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto; gap: 0.75rem; align-items: center; padding: 0.7rem 0.8rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #fff; }
+.sprint-steps .tick { width: 1.8rem; height: 1.8rem; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem; border: 1.5px solid var(--border-strong); color: var(--muted); }
+.sprint-steps li.done { background: var(--bg); }
+.sprint-steps li.done .tick { background: var(--good); border-color: var(--good); color: #fff; }
+.sprint-steps li.done > span:nth-child(2) { color: var(--muted); }
+.sprint-steps li.current { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
+.sprint-steps li.current .tick { border-color: var(--accent); color: #78350f; }
+
+.unlock-tag { margin-left: 0.4rem; font-size: 0.75rem; font-weight: 700; color: var(--good); background: #d1fae5; padding: 0.05rem 0.45rem; border-radius: 999px; white-space: nowrap; }
+
+/* Demonstrate: import */
+.import-row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; }
+
+/* Connect: passport */
+.passport-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2rem; align-items: start; padding: 1.75rem; background: var(--card); border: 1px solid var(--border); border-top: 6px solid var(--primary); border-radius: var(--radius); box-shadow: var(--shadow); }
+.passport-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: 1rem; margin: 0.75rem 0 0; }
+.passport-facts dt { font-size: 0.85rem; color: var(--muted); }
+.passport-facts dd { margin: 0; font-family: var(--font-display); font-size: 1.9rem; font-weight: 700; color: var(--fg-strong); line-height: 1.1; }
+.passport-facts dd span { display: block; font-family: var(--font-body); font-size: 0.82rem; font-weight: 400; color: var(--muted); }
+.passport-qr { display: grid; justify-items: center; gap: 0.3rem; }
+.qr { width: 9rem; aspect-ratio: 1; }
+.qr svg { display: block; width: 100%; height: 100%; }
+.passport-share { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1.75rem; align-items: center; }
+.vouch { margin: 0; padding: 0.8rem 1rem; border-left: 4px solid var(--accent); background: var(--accent-soft); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; display: grid; gap: 0.3rem; }
+.vouch footer { color: #78350f; }
+.delta { font-weight: 700; }
+.delta.up { color: var(--good); }
+.delta.down { color: var(--bad-text); }
+.plain-fieldset legend { font-weight: 600; color: var(--fg-strong); margin-bottom: 0.4rem; }
+
+@media (max-width: 640px) {
+  .calibration, .passport-head, .passport-share { grid-template-columns: minmax(0, 1fr); }
+  .passport-qr, .passport-share .qr { justify-self: start; }
+  .contract div { grid-template-columns: minmax(0, 1fr); gap: 0.2rem; }
+  .sprint-steps li { grid-template-columns: 2rem minmax(0, 1fr); }
+  .sprint-steps li .btn { grid-column: 2; justify-self: start; }
+  .segment span { font-size: 0.9rem; }
+}
+
 @media (max-width: 1040px) {
   .hero { grid-template-columns: minmax(0, 1fr); gap: 2.5rem; padding-top: 2.5rem; }
   .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }

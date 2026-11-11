@@ -2,7 +2,19 @@ import Link from "next/link";
 import { ReadinessChart } from "@/components/client";
 import { SkillBar, SkillLegend, TrustLabel } from "@/components/ui";
 import { competency, project, role } from "@/lib/framework";
-import { gapRows, readiness, readinessHistory, recommendProjects, skillTrust, type Trust } from "@/lib/scoring";
+import { calibrationLabel, latestRun } from "@/lib/calibration";
+import {
+  STALE_AFTER_DAYS,
+  gapPriorities,
+  gapRows,
+  readiness,
+  readinessHistory,
+  recommendProjects,
+  skillTrust,
+  sprintSteps,
+  staleSkills,
+  type Trust,
+} from "@/lib/scoring";
 import { getStudent } from "@/lib/store";
 
 const TRUST_ORDER: Trust[] = ["Defended", "AI-evaluated", "Assessed", "Could not defend", "Claimed only", "No evidence"];
@@ -13,7 +25,8 @@ export default async function StudentOverview() {
   const score = readiness(target.requirements, student.evidence);
   const rows = gapRows(target.requirements, student.evidence, student.claims);
   const history = readinessHistory(target.requirements, student.evidence);
-  const biggest = rows[0];
+  // The same order as the gaps page and the sprint: the gap worth most in jobs comes first.
+  const biggest = gapPriorities(target, student)[0] ?? rows[0];
   const next = recommendProjects(target, student).find((p) => p.rubric.some((c) => c.competencyId === biggest.competencyId));
   const undefended = student.evaluations.find((e) => e.submission && !e.defence);
   const met = rows.filter((r) => r.status === "Met").length;
@@ -22,6 +35,13 @@ export default async function StudentOverview() {
     level,
     count: target.requirements.filter((r) => skillTrust(student.evidence, student.claims, r.competencyId) === level).length,
   })).filter((t) => t.count > 0);
+  const run = latestRun(student.assessments);
+  const stale = staleSkills(target.requirements.map((r) => r.competencyId), student.evidence);
+  const sprint = student.sprint;
+  const sprintWork = sprint ? project(sprint.projectId) : undefined;
+  const sprintStepsList =
+    sprint && sprintWork ? sprintSteps(sprint, student, sprintWork.title, sprintWork.rubric.find((c) => c.id === sprint.criterionId)?.criterion ?? "") : [];
+  const sprintDone = sprintStepsList.filter((s) => s.done).length;
 
   return (
     <div className="stack-lg">
@@ -56,19 +76,61 @@ export default async function StudentOverview() {
               <p className="small">Answer three questions about “{project(undefended.projectId)?.title}” to raise your trust level.</p>
               <Link className="btn" href={`/student/projects/${undefended.projectId}#defence`}>Start my defence</Link>
               {biggest.shortfall > 0 && next && (
-                <p className="small">Then close your largest gap, {competency(biggest.competencyId).name}, with <Link href={`/student/projects/${next.id}`}>this project</Link>.</p>
+                <p className="small">Then close your most valuable gap, {competency(biggest.competencyId).name}, with <Link href={`/student/projects/${next.id}`}>this project</Link>.</p>
               )}
             </>
           ) : biggest.shortfall > 0 ? (
             <>
               <h2>Prove {competency(biggest.competencyId).name}</h2>
-              <p className="small">This is your largest gap, {biggest.shortfall} points short.</p>
+              <p className="small">Your most valuable gap to close, {biggest.shortfall} points short. <Link href="/student/gaps">See why</Link></p>
               {next ? <Link className="btn" href={`/student/projects/${next.id}`}>Open the project</Link> : <Link className="btn" href="/student/assessment">Reassess now</Link>}
             </>
           ) : (
             <>
               <h2>You meet every requirement</h2>
               <Link className="btn" href="/student/opportunities">See matching jobs</Link>
+            </>
+          )}
+        </div>
+      </section>
+
+      <section className="stats">
+        <div className="stat">
+          {sprint && sprintWork ? (
+            <>
+              <b>{sprintDone} of {sprintStepsList.length}</b>
+              sprint steps proven for {competency(sprint.competencyId).name}. <Link href="/student/plan">Open my sprint</Link>
+            </>
+          ) : (
+            <>
+              <b>No sprint</b>
+              <Link href="/student/plan">Plan two weeks on your most valuable gap</Link>
+            </>
+          )}
+        </div>
+        <div className="stat">
+          {run ? (
+            <>
+              <b>{run.calibration}</b>
+              self-awareness, {calibrationLabel(run).toLowerCase()}. How well your confidence matched your results.
+            </>
+          ) : (
+            <>
+              <b>Not measured</b>
+              <Link href="/student/assessment">Take the assessment</Link> to see how well you know your own skills.
+            </>
+          )}
+        </div>
+        <div className="stat">
+          {stale.length > 0 ? (
+            <>
+              <b>{stale.length} ageing</b>
+              {stale.map((s) => `${competency(s.competencyId).name} (${s.days} days)`).join(", ")}. <Link href="/student/assessment">Re-prove them</Link>
+            </>
+          ) : (
+            <>
+              <b>Up to date</b>
+              Every skill has evidence from the last {STALE_AFTER_DAYS} days.
             </>
           )}
         </div>

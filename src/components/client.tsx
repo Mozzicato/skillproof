@@ -428,8 +428,27 @@ export function ProjectSubmit({ projectId, deliverable }: { projectId: string; d
   const router = useRouter();
   const [submission, setSubmission] = useState("");
   const [link, setLink] = useState("");
+  const [repo, setRepo] = useState("");
+  const [imported, setImported] = useState("");
+  const [importing, setImporting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  async function importRepo() {
+    setImporting(true);
+    setError("");
+    setImported("");
+    try {
+      const r = await post<{ text: string; link: string; files: number; commits: number }>("/api/github", { url: repo });
+      setSubmission(r.text);
+      setLink(r.link);
+      setImported(`Imported ${r.files} files and ${r.commits} commit messages. Add a short note at the end if the brief asks for one.`);
+    } catch (err) {
+      setError(message(err));
+    } finally {
+      setImporting(false);
+    }
+  }
 
   return (
     <form
@@ -440,6 +459,8 @@ export function ProjectSubmit({ projectId, deliverable }: { projectId: string; d
         setError("");
         try {
           await post<{ evaluation: ProjectEvaluation }>("/api/projects/evaluate", { projectId, submission, link });
+          setImported("");
+          setRepo("");
           setSubmission("");
           setLink("");
           router.refresh();
@@ -450,7 +471,17 @@ export function ProjectSubmit({ projectId, deliverable }: { projectId: string; d
         }
       }}
     >
-      <label className="field">Your work<textarea value={submission} onChange={(e) => setSubmission(e.target.value)} placeholder={deliverable} /></label>
+      <div className="import-row">
+        <label className="field" style={{ flex: "1 1 16rem" }}>
+          Import from a public GitHub repository
+          <input type="url" value={repo} onChange={(e) => setRepo(e.target.value)} placeholder="https://github.com/you/project" />
+        </label>
+        <button type="button" className="btn quiet" disabled={importing || !repo.includes("github.com/")} onClick={importRepo}>
+          {importing ? "Reading the repository" : "Import code"}
+        </button>
+      </div>
+      {imported && <p className="small" role="status">{imported}</p>}
+      <label className="field">Your work<textarea value={submission} onChange={(e) => setSubmission(e.target.value)} placeholder={deliverable} rows={12} spellCheck={false} /></label>
       <label className="field">Portfolio or repository link (optional)<input type="url" value={link} onChange={(e) => setLink(e.target.value)} /></label>
       {error && <p className="error" role="alert">{error}</p>}
       <div><button className="btn" disabled={busy || submission.trim().length < 40}>{busy ? "Evaluating against the rubric" : "Submit for evaluation"}</button></div>
@@ -488,17 +519,18 @@ export function ResumeAnalyzer() {
   );
 }
 
-export function CopyText({ text }: { text: string }) {
+export function CopyText({ text, label = "Copy CV text" }: { text: string; label?: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <button
-      className="btn quiet"
+      type="button"
+      className="btn quiet btn-sm"
       onClick={async () => {
         await navigator.clipboard.writeText(text);
         setCopied(true);
       }}
     >
-      {copied ? "Copied" : "Copy CV text"}
+      {copied ? "Copied" : label}
     </button>
   );
 }
