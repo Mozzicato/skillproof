@@ -88,6 +88,15 @@ legend { font-weight: 600; padding: 0; margin-bottom: 0.45rem; }
 .site-header-inner { max-width: 1200px; margin: 0 auto; padding: 0.65rem 1.25rem; display: flex; align-items: center; gap: 1rem; }
 .brand { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; color: var(--fg-strong); text-decoration: none; letter-spacing: -0.02em; }
 .brand:hover { color: var(--fg-strong); }
+.brand { display: inline-flex; align-items: center; gap: 0.5rem; white-space: nowrap; }
+.brand img { display: block; height: 34px; width: auto; }
+.brand-ai { color: var(--primary); }
+.auth-aside .brand img { background: #fff; border-radius: 10px; padding: 3px 5px; box-sizing: content-box; height: 30px; }
+.auth-aside .brand-ai { color: #5eead4; }
+.demo-switch { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; white-space: nowrap; max-width: 100%; }
+.demo-switch select { min-width: 0; flex: 1; }
+.demo-switch select { font: inherit; font-weight: 400; min-height: 36px; max-width: 100%; border: 1px solid #fcd34d; border-radius: var(--radius-sm); background: #fff; color: var(--fg-strong); padding: 0.2rem 0.5rem; }
+
 .site-section { color: var(--muted); border-left: 1px solid var(--border); padding-left: 1rem; }
 .site-nav { margin-left: auto; display: flex; align-items: center; gap: 1.25rem; }
 .site-nav > a:not(.btn) { color: var(--fg); text-decoration: none; font-weight: 500; }
@@ -143,6 +152,28 @@ legend { font-weight: 600; padding: 0; margin-bottom: 0.45rem; }
 .cta-band .btn.quiet { background: transparent; color: #fff; border-color: #5eead4; }
 .cta-band .btn.quiet:hover { background: rgba(255, 255, 255, 0.08); }
 .site-foot { max-width: 1200px; margin: 0 auto; padding: 0 1.25rem 3rem; }
+
+/* Pricing */
+.plans { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; align-items: start; }
+.plan { position: relative; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.75rem; display: grid; gap: 0.75rem; box-shadow: var(--shadow); }
+.plan.featured { border: 2px solid var(--primary); }
+.plan .btn { justify-self: start; margin: 0.25rem 0 0.5rem; }
+.plan-flag { position: absolute; top: 1.25rem; right: 1.25rem; }
+.plan-price b { font-family: var(--font-display); font-size: 2.4rem; color: var(--fg-strong); letter-spacing: -0.02em; }
+.plan-features { list-style: none; margin: 0; padding: 0.75rem 0 0; border-top: 1px solid var(--border); display: grid; gap: 0.6rem; }
+.plan-features li { display: flex; gap: 0.6rem; align-items: flex-start; }
+.plan-features svg { flex: none; color: var(--primary); margin-top: 0.2rem; }
+.plan-features a { color: var(--fg); text-decoration-color: var(--border-strong); }
+.plan-features a:hover { color: var(--primary); }
+.plan-soon { margin-left: 0.5rem; }
+@media (max-width: 760px) { .plans { grid-template-columns: minmax(0, 1fr); } }
+
+/* Printing a passport gives a clean competency report */
+@media print {
+  .site-header, .no-print { display: none !important; }
+  body { background: #fff; }
+  .panel { box-shadow: none; break-inside: avoid; }
+}
 
 /* Auth */
 .auth-shell { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); min-height: 100vh; }

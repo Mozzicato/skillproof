@@ -4,7 +4,7 @@ import { COHORT_SIZE, DEPARTMENTS, cohort } from "@/lib/cohort";
 import { COMPETENCIES, competency } from "@/lib/framework";
 import { competencyScore } from "@/lib/scoring";
 import { SiteHeader } from "@/components/SiteHeader";
-import { seedStudent } from "@/lib/seed";
+import { sampleStudents } from "@/lib/roster";
 import { accountStudents } from "@/lib/store";
 import { latestRun } from "@/lib/calibration";
 import { COMPETENCY_IDS, type CompetencyId, type Student } from "@/lib/types";
@@ -40,7 +40,7 @@ export default async function EmployerPage({ searchParams }: { searchParams: Sea
     vouches: s.endorsements?.length ?? 0,
   });
   const accounts = (await accountStudents()).filter((s) => s.evidence.length > 0).map((s) => toRow(s, "account"));
-  const pool: Row[] = [...accounts, toRow(seedStudent(), "sample"), ...cohort().map((s) => ({ ...s, kind: "simulated" as const }))];
+  const pool: Row[] = [...accounts, ...sampleStudents().map((s) => toRow(s, "sample")), ...cohort().map((s) => ({ ...s, kind: "simulated" as const }))];
   const rank = { account: 0, sample: 1, simulated: 2 };
   const average = (r: Row) => skills.reduce((acc, id) => acc + (r.scores[id] ?? 0), 0) / Math.max(skills.length, 1);
   const matches = pool
@@ -53,7 +53,7 @@ export default async function EmployerPage({ searchParams }: { searchParams: Sea
       <main className="wide-page"><div className="wide stack-lg">
         <header className="page-head">
           <h1>Find graduates by what they can do</h1>
-          <p className="notice">Students with their own accounts are listed first, with full portfolios. The {COHORT_SIZE.toLocaleString()} simulated students fill out the search to show how it works at scale.</p>
+          <p className="notice">Students with their own accounts are listed first, then {sampleStudents().length} sample students with full portfolios. The {COHORT_SIZE.toLocaleString()} simulated students fill out the search to show how it works at scale.</p>
         </header>
 
         <form className="panel stack" method="get">
@@ -104,7 +104,7 @@ export default async function EmployerPage({ searchParams }: { searchParams: Sea
                       ) : (
                         <span className="row" style={{ gap: "0.5rem" }}>
                           <Link href={`/p/${r.id}`}>View portfolio</Link>
-                          <span className={`badge ${r.kind === "account" ? "good" : "judge"}`}>{r.kind === "account" ? "Registered" : "Judge demo"}</span>
+                          <span className={`badge ${r.kind === "account" ? "good" : "judge"}`}>{r.kind === "account" ? "Registered" : "Sample student"}</span>
                         </span>
                       )}
                     </td>

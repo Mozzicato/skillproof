@@ -16,6 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { Brand } from "@/components/Brand";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { CycleStep } from "@/lib/scoring";
@@ -48,7 +49,7 @@ export function StudentNav({ steps }: { steps: CycleStep[] }) {
   return (
     <>
       <div className="rail-top">
-        <Link href="/" className="brand">SkillProof</Link>
+        <Brand />
         <button type="button" className="btn quiet btn-sm menu-toggle" aria-expanded={open} aria-controls="student-nav" onClick={() => setOpen(!open)}>
           {open ? "Close menu" : "Menu"}
         </button>

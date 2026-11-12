@@ -2,9 +2,10 @@ import { ArrowRight, BadgeCheck, GraduationCap, Search, ShieldCheck } from "luci
 import Link from "next/link";
 import { ClaimSheet, type MarkedClaim } from "@/components/ClaimSheet";
 import { SiteHeader } from "@/components/SiteHeader";
-import { COHORT_SIZE, DEPARTMENTS, cohort, departmentMean } from "@/lib/cohort";
+import { COHORT_SIZE, DEPARTMENTS, departmentMean } from "@/lib/cohort";
 import { COMPETENCIES, competency, role } from "@/lib/framework";
 import { claimVerdict, competencyScore, gapRows, newestFirst, readiness } from "@/lib/scoring";
+import { sampleStudents } from "@/lib/roster";
 import { seedStudent } from "@/lib/seed";
 
 export const dynamic = "force-dynamic";
@@ -44,7 +45,9 @@ export default function Home() {
     };
   });
 
-  const topCandidates = [...cohort()].sort((a, b) => b.scores.sql + b.scores.python - a.scores.sql - a.scores.python).slice(0, 3);
+  const samples = sampleStudents();
+  const sql = (s: (typeof samples)[number]) => competencyScore(s.evidence, "sql") ?? 0;
+  const topCandidates = [...samples].sort((a, b) => sql(b) - sql(a)).slice(0, 3).map((s) => ({ id: s.id, name: s.name, sql: sql(s) }));
 
   return (
     <>
@@ -122,7 +125,7 @@ export default function Home() {
               <Link className="portal" href="/employer">
                 <div><h3>Employers</h3><p className="small muted">Search graduates by demonstrated skill, then read the work.</p></div>
                 <div className="portal-preview mini-list" aria-hidden="true">
-                  {topCandidates.map((c) => <div key={c.id}><span>{c.name}</span><span>SQL {c.scores.sql}</span></div>)}
+                  {topCandidates.map((c) => <div key={c.id}><span>{c.name}</span><span>SQL {c.sql}</span></div>)}
                 </div>
                 <span className="portal-link">Open the employer view <ArrowRight size={16} aria-hidden="true" /></span>
               </Link>
@@ -134,17 +137,17 @@ export default function Home() {
           <div className="cta-band">
             <div className="stack" style={{ gap: "0.4rem" }}>
               <h2>Start proving your skills today</h2>
-              <p>Free for students. Your first assessment takes about five minutes.</p>
+              <p>Free for students, with Pro at $29.99 a year for a full growth plan. Your first assessment takes about fifteen minutes.</p>
             </div>
             <div className="row">
               <Link className="btn accent" href="/signup">Create your free account</Link>
-              <Link className="btn quiet" href="/login">Sign in</Link>
+              <Link className="btn quiet" href="/pricing">Compare plans</Link>
             </div>
           </div>
         </section>
       </main>
       <footer className="site-foot small muted">
-        {sample.name} is a sample student. The {COHORT_SIZE.toLocaleString()} university and employer records are simulated.
+        {sample.name} and the other {samples.length - 1} sample students, and everyone vouching for them, are fictional. The {COHORT_SIZE.toLocaleString()} university and employer records are simulated.
       </footer>
     </>
   );

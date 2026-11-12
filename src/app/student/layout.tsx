@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { SignOutButton } from "@/components/AuthForms";
-import { ResetDemo, RoleSelect } from "@/components/client";
+import { DemoSwitch, ResetDemo, RoleSelect } from "@/components/client";
 import { StudentNav } from "@/components/StudentNav";
 import { ROLES, role } from "@/lib/framework";
+import { sampleStudents } from "@/lib/roster";
 import { cycleStatus } from "@/lib/scoring";
-import { getStudent, getViewer } from "@/lib/store";
+import { getStudent, getViewer, sampleBase } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,10 @@ export default async function StudentLayout({ children }: { children: React.Reac
           <div className="demo-banner" role="note">
             <span className="badge judge">Judge demo</span>
             <span>You are viewing a sample student with work already scored. Your changes stay private to this browser.</span>
+            <DemoSwitch
+              current={sampleBase(student.id)}
+              students={sampleStudents().map((s) => ({ id: s.id, label: `${s.name}, ${s.department}, ${role(s.targetRoleId).title.replace("Junior ", "")}` }))}
+            />
             <Link href="/signup">Create your own account</Link>
           </div>
         )}

@@ -7,7 +7,7 @@ const body = Work_Sans({ subsets: ["latin"], variable: "--font-body" });
 const code = JetBrains_Mono({ subsets: ["latin"], variable: "--font-code" });
 
 export const metadata: Metadata = {
-  title: "SkillProof",
+  title: "SkillProof AI",
   description: "Career readiness built on evidence of what students can actually do.",
 };
 

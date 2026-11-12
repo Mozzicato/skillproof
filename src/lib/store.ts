@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { cache } from "react";
 import { currentUser, type User } from "./auth";
 import { kv } from "./db";
+import { sampleStudent } from "./roster";
 import { DEMO_STUDENT_ID, seedStudent } from "./seed";
 import { SESSION_COOKIE } from "./session";
 import type { Curricula, Endorsement, EndorserRole, Student } from "./types";
@@ -69,11 +70,26 @@ export async function saveCurriculum(department: string, topics: Curricula[strin
   await writeWorkspace(await workspaceKey(), { ...current, curricula: { ...current.curricula, [department]: topics } });
 }
 
+/** Demo copies are named `<sample id>-<8 hex>`, so the sample they came from can be recovered. */
+export function sampleBase(id: string): string {
+  return id.replace(/-[0-9a-f]{8}$/, "");
+}
+
 /** Only the judge demo can be reset, so nobody wipes a real account by accident. */
 export async function resetDemo(): Promise<boolean> {
   if (await currentUser()) return false;
   const current = await currentWorkspace();
-  await writeWorkspace(await workspaceKey(), { student: seedStudent(current.student.id), curricula: {} });
+  const student = sampleStudent(sampleBase(current.student.id), current.student.id) ?? seedStudent(current.student.id);
+  await writeWorkspace(await workspaceKey(), { student, curricula: {} });
+  return true;
+}
+
+/** Lets a judge explore the product as any sample student. Accounts cannot switch. */
+export async function switchDemo(sampleId: string): Promise<boolean> {
+  if (await currentUser()) return false;
+  const student = sampleStudent(sampleId, `${sampleId}-${shortId()}`);
+  if (!student) return false;
+  await writeWorkspace(await workspaceKey(), { student, curricula: (await currentWorkspace()).curricula });
   return true;
 }
 
@@ -97,9 +113,12 @@ export async function createAccountWorkspace(userId: string, details: { name: st
 
 /** Public portfolios are looked up by student id, which is separate from the private session. */
 export async function findStudent(studentId: string): Promise<Student | null> {
-  if (studentId === DEMO_STUDENT_ID) return seedStudent();
+  const sample = sampleStudent(studentId);
+  if (sample) return sample;
   const entry = await kv.get<{ workspace: string }>("portfolio", studentId);
-  return entry ? ((await kv.get<Workspace>("workspace", entry.workspace))?.student ?? null) : null;
+  const student = entry ? ((await kv.get<Workspace>("workspace", entry.workspace))?.student ?? null) : null;
+  // A demo workspace may have switched to another sample since this id was issued.
+  return student?.id === studentId ? student : null;
 }
 
 export interface Invite {

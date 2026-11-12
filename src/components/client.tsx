@@ -56,6 +56,42 @@ export function ResetDemo() {
   );
 }
 
+/** The browser's print dialog saves the passport as a PDF competency report; print styles hide the site chrome. */
+export function PrintButton() {
+  return (
+    <button type="button" className="btn quiet btn-sm no-print" onClick={() => window.print()}>
+      Download as PDF
+    </button>
+  );
+}
+
+/** Judges can explore the product as any sample student; the choice stays private to the browser. */
+export function DemoSwitch({ current, students }: { current: string; students: { id: string; label: string }[] }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  return (
+    <label className="demo-switch">
+      Explore as
+      <select
+        value={current}
+        disabled={busy}
+        onChange={async (e) => {
+          setBusy(true);
+          try {
+            await post("/api/demo", { studentId: e.target.value });
+            router.push("/student");
+            router.refresh();
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {students.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+      </select>
+    </label>
+  );
+}
+
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
 async function streamInto(url: string, messages: ChatMessage[], onText: (text: string) => void, extra: object = {}) {

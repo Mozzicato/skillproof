@@ -11,9 +11,24 @@ import {
 } from "@/lib/cohort";
 import { CurriculumForm } from "@/components/client";
 import { SiteHeader } from "@/components/SiteHeader";
-import { COMPETENCIES, JOBS, competency } from "@/lib/framework";
+import { COMPETENCIES, JOBS, competency, role } from "@/lib/framework";
+import { calibrationLabel, latestRun } from "@/lib/calibration";
+import { sampleStudents } from "@/lib/roster";
+import { jobMatches, readiness, staleSkills } from "@/lib/scoring";
 import { getCurricula } from "@/lib/store";
-import type { CompetencyId } from "@/lib/types";
+import type { CompetencyId, Student } from "@/lib/types";
+
+/** What the careers team should do next for one student, most urgent first. */
+function nextAction(s: Student): { label: string; tone: "good" | "mid" | "bad" | "" } {
+  const run = latestRun(s.assessments);
+  const ready = jobMatches(s.evidence).filter((m) => m.missing.length === 0).length;
+  const stale = staleSkills(role(s.targetRoleId).requirements.map((r) => r.competencyId), s.evidence);
+  if (run && calibrationLabel(run) === "Overconfident") return { label: "Overconfident: book a feedback session", tone: "bad" };
+  if (ready > 0) return { label: `Meets ${ready} ${ready === 1 ? "vacancy" : "vacancies"}: refer to employers`, tone: "good" };
+  if (stale.length > 0) return { label: `Evidence ageing on ${stale.length} ${stale.length === 1 ? "skill" : "skills"}: invite to reassess`, tone: "mid" };
+  if (s.sprint) return { label: `On a sprint for ${competency(s.sprint.competencyId).name}`, tone: "" };
+  return { label: "Building evidence", tone: "" };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -83,6 +98,33 @@ export default async function UniversityPage() {
                   <td className="rowhead demand">Share of vacancies asking</td>
                   {COMPETENCIES.map((c) => <td key={c.id} className="demand">{employerDemand(c.id)}%</td>)}
                 </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+
+        <section className="panel stack">
+          <div className="stack" style={{ gap: "0.35rem" }}>
+            <h2>Students with full records</h2>
+            <p className="muted small">Sample students with complete portfolios. Each row says what the careers team should do next.</p>
+          </div>
+          <div className="table-scroll">
+            <table>
+              <thead><tr><th>Student</th><th>Aiming for</th><th className="num">Readiness</th><th className="num">Self-awareness</th><th>Next step for staff</th></tr></thead>
+              <tbody>
+                {sampleStudents()
+                  .map((s) => ({ s, ready: readiness(role(s.targetRoleId).requirements, s.evidence), run: latestRun(s.assessments), action: nextAction(s) }))
+                  .sort((a, b) => b.ready - a.ready)
+                  .map(({ s, ready, run, action }) => (
+                    <tr key={s.id}>
+                      <td><Link href={`/p/${s.id}`}>{s.name}</Link><br /><span className="small muted">{s.department}</span></td>
+                      <td>{role(s.targetRoleId).title}</td>
+                      <td className="num">{ready}</td>
+                      <td className="num">{run?.calibration ?? "–"}</td>
+                      <td><span className={`status ${action.tone}`}>{action.label}</span></td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>

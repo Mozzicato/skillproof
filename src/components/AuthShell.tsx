@@ -1,5 +1,6 @@
 import { BadgeCheck, GraduationCap, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import { Brand } from "@/components/Brand";
 
 const POINTS = [
   { icon: BadgeCheck, text: "Every skill score links to the work behind it." },
@@ -11,7 +12,7 @@ export function AuthShell({ title, intro, children }: { title: string; intro: st
   return (
     <div className="auth-shell">
       <aside className="auth-aside">
-        <Link href="/" className="brand">SkillProof</Link>
+        <Brand />
         <div className="auth-aside-body">
           <h2>Prove what you can do, not just what you claim.</h2>
           <ul className="auth-points">

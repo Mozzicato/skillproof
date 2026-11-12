@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { PrintButton } from "@/components/client";
 import { EndorsementItem, QrCode, siteOrigin } from "@/components/passport";
 import { SiteHeader } from "@/components/SiteHeader";
 import { EvidenceItem, TrustLabel, formatDate } from "@/components/ui";
@@ -56,6 +57,7 @@ export default async function PassportPage({ params }: { params: Promise<{ id: s
           <div className="passport-qr">
             <QrCode url={url} label={`QR code linking to ${student.name}'s Skill Passport`} />
             <span className="small muted">Scan to verify</span>
+            <PrintButton />
           </div>
         </header>
 
