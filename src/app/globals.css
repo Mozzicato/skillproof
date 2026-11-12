@@ -186,6 +186,18 @@ legend { font-weight: 600; padding: 0; margin-bottom: 0.45rem; }
   .truth-facts dd { font-size: 1.35rem; }
 }
 
+/* CV document */
+.cv-doc { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; display: grid; gap: 1.1rem; max-width: 52rem; }
+.cv-doc header { display: grid; gap: 0.25rem; border-bottom: 2px solid var(--primary); padding-bottom: 0.9rem; }
+.cv-doc h2 { font-size: 1.9rem; }
+.cv-headline { font-weight: 600; color: var(--primary); font-size: 1.05rem; }
+.cv-doc h3 { font-size: 0.95rem; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; margin-bottom: 0.5rem; }
+.cv-doc ul { margin: 0.2rem 0 0; padding-left: 1.2rem; }
+.cv-skills { list-style: none; padding: 0 !important; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem 1.5rem; }
+.cv-level { font-size: 0.85rem; color: var(--muted); }
+.cv-entry + .cv-entry { margin-top: 0.6rem; }
+@media (max-width: 640px) { .cv-doc { padding: 1.1rem; } .cv-skills { grid-template-columns: minmax(0, 1fr); } }
+
 /* Pricing */
 .pro-tag { margin-left: auto; font-size: 0.7rem; font-weight: 700; padding: 0.05rem 0.45rem; border-radius: 999px; background: var(--primary-soft); color: var(--primary-hover); }
 .checkout { max-width: 640px; }
@@ -206,7 +218,10 @@ legend { font-weight: 600; padding: 0; margin-bottom: 0.45rem; }
 
 /* Printing a passport gives a clean competency report */
 @media print {
-  .site-header, .no-print { display: none !important; }
+  .site-header, .no-print, .rail, .appbar, .demo-banner, .tour { display: none !important; }
+  .shell { display: block !important; }
+  .main { padding: 0 !important; }
+  .cv-doc { border: 0 !important; box-shadow: none !important; padding: 0 !important; }
   body { background: #fff; }
   .panel { box-shadow: none; break-inside: avoid; }
 }

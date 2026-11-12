@@ -558,30 +558,99 @@ export function ProjectSubmit({ projectId, deliverable }: { projectId: string; d
 export function ResumeAnalyzer() {
   const router = useRouter();
   const [cv, setCv] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [file, setFile] = useState("");
+  const [busy, setBusy] = useState<"" | "upload" | "check">("");
   const [error, setError] = useState("");
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  async function upload(chosen: File) {
+    setBusy("upload");
+    setError("");
+    try {
+      const form = new FormData();
+      form.append("file", chosen);
+      const response = await fetch("/api/resume/upload", { method: "POST", body: form });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error ?? "We could not read that file.");
+      setCv(data.text);
+      setFile(chosen.name);
+    } catch (err) {
+      setError(message(err));
+    } finally {
+      setBusy("");
+      if (fileInput.current) fileInput.current.value = "";
+    }
+  }
+
   return (
     <form
       className="stack"
       onSubmit={async (e) => {
         e.preventDefault();
-        setBusy(true);
+        setBusy("check");
         setError("");
         try {
           await post("/api/resume", { cv });
           setCv("");
+          setFile("");
           router.refresh();
         } catch (err) {
           setError(message(err));
         } finally {
-          setBusy(false);
+          setBusy("");
         }
       }}
     >
-      <label className="field">CV text<textarea value={cv} onChange={(e) => setCv(e.target.value)} /></label>
+      <div className="import-row">
+        <label className="btn quiet" style={{ cursor: "pointer" }}>
+          {busy === "upload" ? "Reading your file" : "Upload your CV"}
+          <input
+            ref={fileInput}
+            type="file"
+            className="sr-only"
+            accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+            disabled={busy !== ""}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); }}
+          />
+        </label>
+        <span className="small muted">{file ? `Read from ${file}. Check the text below, then run the check.` : "PDF, Word (.docx) or text, up to 5 MB. The file itself is not stored."}</span>
+      </div>
+      <label className="field">CV text<textarea value={cv} onChange={(e) => setCv(e.target.value)} rows={10} placeholder="Upload a file or paste your CV here." /></label>
       {error && <p className="error" role="alert">{error}</p>}
-      <div><button className="btn" disabled={busy || cv.trim().length < 40}>{busy ? "Checking your CV" : "Check my CV"}</button></div>
+      <div><button className="btn" disabled={busy !== "" || cv.trim().length < 40}>{busy === "check" ? "Checking your CV" : "Check my CV"}</button></div>
     </form>
+  );
+}
+
+export function OptimiseCv({ label }: { label: string }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  return (
+    <div className="stack" style={{ gap: "0.5rem" }}>
+      <div>
+        <button
+          type="button"
+          className="btn"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            setError("");
+            try {
+              await post("/api/resume/optimise", {});
+              router.refresh();
+            } catch (err) {
+              setError(message(err));
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {busy ? "Writing your CV" : label}
+        </button>
+      </div>
+      {error && <p className="error" role="alert">{error}</p>}
+    </div>
   );
 }
 

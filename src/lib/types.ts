@@ -97,6 +97,19 @@ export interface Endorsement {
   verified?: { domain: string; work: boolean; at: string };
 }
 
+/** A CV rewritten for the target role. Skill levels come from evidence; experience must quote the student's own CV. */
+export interface OptimisedCv {
+  targetRoleId: string;
+  headline: string;
+  summary: string;
+  skills: { competencyId: CompetencyId; name: string; score: number; level: string; line: string }[];
+  projects: { title: string; bullets: string[] }[];
+  experience: { role: string; organisation: string; dates: string; bullets: string[] }[];
+  education: string[];
+  tips: string[];
+  createdAt: string;
+}
+
 export interface Plan {
   tier: "free" | "pro";
   since: string;
@@ -206,6 +219,9 @@ export interface Student {
   sprint?: Sprint | null;
   endorsements?: Endorsement[];
   plan?: Plan;
+  /** The latest CV text the student pasted or uploaded. */
+  cvText?: string;
+  optimisedCv?: OptimisedCv;
   /** The coach this student shared their progress with. */
   coach?: { name: string; joinedAt: string };
 }

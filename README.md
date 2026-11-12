@@ -39,6 +39,7 @@ Sam Okoro is a sample student. The 2,000 students on the university and employer
 - **Eleven sample students** with full records cover every department and both roles. "Explore as" in the demo banner switches between them.
 - **Verified confirmations.** People confirming a skill enter a work email and a six-digit code. The passport shows only the email domain. Codes are sent with Resend when `RESEND_API_KEY` is set (and `EMAIL_FROM` optionally); without it the code is shown on screen, labelled as demo mode.
 - **Coach tools** (`/coach`). A coach shares one link, and up to five learners on the Free plan can choose to share their progress.
+- **CV upload and optimised CV.** Students upload a PDF, Word (.docx) or text CV; the text is read on the server and the file is not stored. "Generate my optimised CV" writes a CV for the target role: skill levels come only from evidence, and every experience and education line must quote the student's own CV word for word or it is dropped. It downloads as a PDF.
 - **Plans** (`/pricing`). Free and Pro at $29.99 a year. Upgrading uses a practice checkout: no card details, no payment.
 
 ## Checks

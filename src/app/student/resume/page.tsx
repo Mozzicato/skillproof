@@ -1,4 +1,8 @@
-import { CopyText, ResumeAnalyzer } from "@/components/client";
+import Link from "next/link";
+import { CopyText, OptimiseCv, ResumeAnalyzer } from "@/components/client";
+import { CvDocument } from "@/components/CvDocument";
+import { siteOrigin } from "@/components/passport";
+import { cvPlainText } from "@/lib/cv";
 import { PageHead, Status } from "@/components/ui";
 import { COMPETENCIES, competency, project, role } from "@/lib/framework";
 import { claimVerdict, competencyScore, levelName } from "@/lib/scoring";
@@ -59,16 +63,42 @@ export default async function ResumePage() {
       )}
 
       <section className="panel stack">
-        <h2>Check a CV</h2>
+        <h2>Upload or paste your CV</h2>
         <ResumeAnalyzer />
       </section>
 
       <section className="panel stack">
         <div className="row between">
-          <h2>Your evidence-backed CV</h2>
-          <CopyText text={cv} />
+          <div className="stack" style={{ gap: "0.3rem" }}>
+            <h2>Your optimised CV</h2>
+            <p className="small muted">Written for {target.title}. Skill levels come only from your evidence, and every experience line must trace back to your own CV, so nothing is invented.</p>
+          </div>
+          {student.optimisedCv && (
+            <div className="row">
+              <CopyText text={cvPlainText(student, student.optimisedCv)} label="Copy as text" />
+              <Link className="btn quiet btn-sm" href="/student/resume/cv">Download as PDF</Link>
+            </div>
+          )}
         </div>
-        <pre style={{ whiteSpace: "pre-wrap", margin: 0 }}>{cv}</pre>
+        {student.optimisedCv ? (
+          <>
+            <CvDocument student={student} cv={student.optimisedCv} passportUrl={`${await siteOrigin()}/p/${student.id}`} />
+            {student.optimisedCv.tips.length > 0 && (
+              <div className="notice"><strong>Make it stronger:</strong><ul style={{ margin: "0.4rem 0 0" }}>{student.optimisedCv.tips.map((t) => <li key={t}>{t}</li>)}</ul></div>
+            )}
+            <OptimiseCv label="Write it again" />
+          </>
+        ) : (
+          <>
+            <p>{student.cvText ? "We will use your evidence and the CV you checked above." : "Upload or paste your CV above first to include your experience and education, or generate one from your evidence alone."}</p>
+            <OptimiseCv label="Generate my optimised CV" />
+            <details>
+              <summary className="small">Preview the plain evidence summary</summary>
+              <div className="row" style={{ marginTop: "0.5rem" }}><CopyText text={cv} /></div>
+              <pre style={{ whiteSpace: "pre-wrap", margin: "0.5rem 0 0" }}>{cv}</pre>
+            </details>
+          </>
+        )}
       </section>
     </div>
   );

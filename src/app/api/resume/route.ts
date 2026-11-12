@@ -40,7 +40,7 @@ export async function POST(request: Request) {
       .map((c) => ({ competencyId: c.competencyId, level: clampScore(c.level), text: c.text }));
 
     const student = (await getStudent());
-    await saveStudent({ ...student, claims, cvFeedback: { strengths: analysis.strengths, improvements: analysis.improvements } });
+    await saveStudent({ ...student, claims, cvText: parsed.data.cv, cvFeedback: { strengths: analysis.strengths, improvements: analysis.improvements } });
     return NextResponse.json({ claims: claims.length });
   } catch (error) {
     return aiErrorResponse(error);
