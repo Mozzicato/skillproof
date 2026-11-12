@@ -13,6 +13,7 @@ export async function SiteHeader({ section }: { section?: string }) {
         <nav className="site-nav" aria-label="Main">
           <Link href="/university">Universities</Link>
           <Link href="/employer">Employers</Link>
+          <Link href="/coach">Coaches</Link>
           <Link href="/pricing">Pricing</Link>
           {user ? (
             <>

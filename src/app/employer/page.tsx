@@ -37,7 +37,7 @@ export default async function EmployerPage({ searchParams }: { searchParams: Sea
     kind,
     scores: Object.fromEntries(COMPETENCY_IDS.map((id) => [id, competencyScore(s.evidence, id) ?? 0])),
     calibration: latestRun(s.assessments)?.calibration,
-    vouches: s.endorsements?.length ?? 0,
+    vouches: s.endorsements?.filter((e) => e.verified).length ?? 0,
   });
   const accounts = (await accountStudents()).filter((s) => s.evidence.length > 0).map((s) => toRow(s, "account"));
   const pool: Row[] = [...accounts, ...sampleStudents().map((s) => toRow(s, "sample")), ...cohort().map((s) => ({ ...s, kind: "simulated" as const }))];
@@ -88,7 +88,7 @@ export default async function EmployerPage({ searchParams }: { searchParams: Sea
           ) : (
             <table style={{ marginTop: "0.75rem" }}>
               <thead>
-                <tr><th>Candidate</th><th>Department</th>{skills.map((id) => <th key={id} className="num">{competency(id).name}</th>)}<th className="num">Self-awareness</th><th className="num">Confirmed by people</th><th>Evidence</th></tr>
+                <tr><th>Candidate</th><th>Department</th>{skills.map((id) => <th key={id} className="num">{competency(id).name}</th>)}<th className="num">Self-awareness</th><th className="num">Verified confirmations</th><th>Evidence</th></tr>
               </thead>
               <tbody>
                 {matches.slice(0, 25).map((r) => (

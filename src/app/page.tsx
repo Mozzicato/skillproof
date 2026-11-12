@@ -2,10 +2,14 @@ import { ArrowRight, BadgeCheck, GraduationCap, Search, ShieldCheck } from "luci
 import Link from "next/link";
 import { ClaimSheet, type MarkedClaim } from "@/components/ClaimSheet";
 import { SiteHeader } from "@/components/SiteHeader";
+import { TourStart } from "@/components/Tour";
 import { COHORT_SIZE, DEPARTMENTS, departmentMean } from "@/lib/cohort";
 import { COMPETENCIES, competency, role } from "@/lib/framework";
-import { claimVerdict, competencyScore, gapRows, newestFirst, readiness } from "@/lib/scoring";
-import { sampleStudents } from "@/lib/roster";
+import { claimVerdict, competencyScore, gapRows, newestFirst, readiness, skillTrust } from "@/lib/scoring";
+import { sampleStudent, sampleStudents } from "@/lib/roster";
+import { latestRun } from "@/lib/calibration";
+import { TrustLabel } from "@/components/ui";
+import type { CompetencyId, Student } from "@/lib/types";
 import { seedStudent } from "@/lib/seed";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +20,47 @@ const FEATURES = [
   { icon: GraduationCap, title: "Curriculum gap map", text: "Universities see what each department teaches against what employers ask for." },
   { icon: Search, title: "Search by proven skill", text: "Employers filter graduates by demonstrated skill, then read the work behind each score." },
 ];
+
+const COMPARED: CompetencyId[] = ["python", "sql", "visualisation", "communication"];
+
+/** One student's CV claims set against what their evidence shows, for the landing comparison. */
+function TruthCard({ student, tone }: { student: Student; tone: "bad" | "good" }) {
+  const target = role(student.targetRoleId);
+  const run = latestRun(student.assessments);
+  return (
+    <article className={`truth-card ${tone}`}>
+      <header>
+        <h3><Link href={`/p/${student.id}`}>{student.name}</Link></h3>
+        <p className="small muted">{student.department}, aiming for {target.title}</p>
+      </header>
+      <table className="truth-table">
+        <thead><tr><th>Skill</th><th>CV says</th><th>Evidence shows</th></tr></thead>
+        <tbody>
+          {COMPARED.map((id) => {
+            const claim = student.claims.find((c) => c.competencyId === id);
+            const proven = competencyScore(student.evidence, id);
+            const failed = student.evidence.some((e) => e.competencyId === id && e.defence === "failed");
+            return (
+              <tr key={id}>
+                <td>{competency(id).name}</td>
+                <td>{claim ? <><b>{claim.level}</b><span className="small muted truth-quote"> &ldquo;{claim.text}&rdquo;</span></> : <span className="muted">Not claimed</span>}</td>
+                <td>
+                  <b>{proven ?? "–"}</b>
+                  {proven !== null && (failed ? <span className="status bad" style={{ display: "block" }}>Could not defend</span> : <TrustLabel value={skillTrust(student.evidence, student.claims, id)} />)}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <dl className="truth-facts">
+        <div><dt>Readiness</dt><dd>{readiness(target.requirements, student.evidence)}</dd></div>
+        <div><dt>Self-awareness</dt><dd>{run?.calibration ?? "–"}</dd></div>
+        <div><dt>Confirmed by</dt><dd>{student.endorsements?.length ?? 0}</dd></div>
+      </dl>
+    </article>
+  );
+}
 
 const STEPS = [
   { title: "Assess", text: "A short assessment sets a baseline for the role you want." },
@@ -60,10 +105,22 @@ export default function Home() {
             <div className="row hero-actions">
               <Link className="btn" href="/signup">Create your free account</Link>
               <Link className="btn accent" href="/student">Open the judge demo</Link>
+              <TourStart />
             </div>
-            <p className="judge-note"><span className="badge judge">For judges</span>The demo opens a sample student with work already scored. Your changes stay private to your browser.</p>
+            <p className="judge-note"><span className="badge judge">For judges</span>The tour shows the whole product in eleven stops, about three minutes. The demo opens a sample student with work already scored, and your changes stay private to your browser.</p>
           </div>
           <ClaimSheet name={sample.name} claims={claims} />
+        </section>
+
+        <section className="section" id="same-cv">
+          <div className="section-head">
+            <h2>Daniel&apos;s CV claims more than Priya&apos;s. The evidence says the opposite.</h2>
+            <p className="muted">Two sample students applying for the same job. A recruiter reading their CVs would shortlist Daniel. SkillProof shows why that would be a mistake.</p>
+          </div>
+          <div className="truth">
+            <TruthCard student={sampleStudent("daniel-reyes")!} tone="bad" />
+            <TruthCard student={sampleStudent("priya-patel")!} tone="good" />
+          </div>
         </section>
 
         <div className="band">

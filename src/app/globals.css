@@ -153,7 +153,43 @@ legend { font-weight: 600; padding: 0; margin-bottom: 0.45rem; }
 .cta-band .btn.quiet:hover { background: rgba(255, 255, 255, 0.08); }
 .site-foot { max-width: 1200px; margin: 0 auto; padding: 0 1.25rem 3rem; }
 
+/* Guided tour */
+.tour { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 50; width: min(24rem, calc(100vw - 2rem)); background: var(--card); border: 1px solid var(--border-strong); border-left: 4px solid var(--primary); border-radius: var(--radius); box-shadow: 0 12px 32px rgba(11, 48, 45, 0.18); padding: 1rem 1.1rem; display: grid; gap: 0.55rem; }
+.tour h2 { font-size: 1.1rem; }
+.tour-close { background: none; border: 0; color: var(--muted); cursor: pointer; padding: 0.35rem; min-width: 44px; min-height: 44px; margin: -0.6rem -0.6rem -0.6rem 0; display: inline-flex; align-items: center; justify-content: center; }
+.tour-progress { height: 4px; background: var(--muted-bg); border-radius: 4px; overflow: hidden; }
+.tour-progress span { display: block; height: 100%; background: var(--primary); transition: width var(--ease); }
+.linkish svg { vertical-align: -3px; margin-right: 0.25rem; }
+@media (max-width: 520px) { .tour { right: 0.5rem; left: 0.5rem; bottom: 0.5rem; width: auto; } }
+@media (prefers-reduced-motion: reduce) { .tour-progress span { transition: none; } }
+
+/* Same CV, different truth */
+.truth { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+.truth-card { background: var(--card); border: 1px solid var(--border); border-top: 4px solid var(--border-strong); border-radius: var(--radius); padding: 1.5rem; display: grid; gap: 1rem; box-shadow: var(--shadow); }
+.truth-card.bad { border-top-color: var(--bad); }
+.truth-card.good { border-top-color: var(--good); }
+.truth-card h3 { font-size: 1.3rem; }
+.truth-card h3 a { color: var(--fg-strong); }
+.truth-table { width: 100%; border-collapse: collapse; }
+.truth-table th { text-align: left; font-size: 0.8rem; color: var(--muted); font-weight: 600; padding: 0 0.5rem 0.4rem 0; }
+.truth-table td { vertical-align: top; padding: 0.55rem 0.5rem 0.55rem 0; border-top: 1px solid var(--border); }
+.truth-table td b { font-family: var(--font-display); font-size: 1.15rem; color: var(--fg-strong); margin-right: 0.3rem; }
+.truth-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; margin: 0; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+.truth-facts dt { font-size: 0.8rem; color: var(--muted); }
+.truth-facts dd { margin: 0; font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; color: var(--fg-strong); }
+#same-cv { scroll-margin-top: 4.5rem; }
+.truth-table .status { white-space: normal; }
+@media (max-width: 860px) { .truth { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 520px) {
+  .truth-card { padding: 1.1rem; }
+  .truth-quote { display: none; }
+  .truth-facts dd { font-size: 1.35rem; }
+}
+
 /* Pricing */
+.pro-tag { margin-left: auto; font-size: 0.7rem; font-weight: 700; padding: 0.05rem 0.45rem; border-radius: 999px; background: var(--primary-soft); color: var(--primary-hover); }
+.checkout { max-width: 640px; }
+
 .plans { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; align-items: start; }
 .plan { position: relative; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.75rem; display: grid; gap: 0.75rem; box-shadow: var(--shadow); }
 .plan.featured { border: 2px solid var(--primary); }

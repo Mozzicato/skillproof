@@ -21,27 +21,27 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { CycleStep } from "@/lib/scoring";
 
-const LINKS: Record<CycleStep["name"], { href: string; label: string; icon: LucideIcon }[]> = {
+const LINKS: Record<CycleStep["name"], { href: string; label: string; icon: LucideIcon; pro?: true }[]> = {
   Assess: [{ href: "/student/assessment", label: "Career assessment", icon: ClipboardCheck }],
   Identify: [{ href: "/student/gaps", label: "Skill gaps", icon: Target }],
   Develop: [
-    { href: "/student/plan", label: "Sprint plan", icon: CalendarCheck },
+    { href: "/student/plan", label: "Sprint plan", icon: CalendarCheck, pro: true },
     { href: "/student/coach", label: "Career coach", icon: MessageCircle },
-    { href: "/student/projects", label: "Recommended projects", icon: FolderKanban },
+    { href: "/student/projects", label: "Recommended projects", icon: FolderKanban, pro: true },
   ],
   Demonstrate: [
     { href: "/student/projects#submitted", label: "Project evaluations", icon: ShieldCheck },
-    { href: "/student/interview", label: "Mock interview", icon: Mic },
+    { href: "/student/interview", label: "Mock interview", icon: Mic, pro: true },
   ],
   Reassess: [{ href: "/student/progress", label: "Progress", icon: TrendingUp }],
   Connect: [
-    { href: "/student/passport", label: "Skill Passport", icon: QrCode },
+    { href: "/student/passport", label: "Skill Passport", icon: QrCode, pro: true },
     { href: "/student/opportunities", label: "Jobs and internships", icon: Briefcase },
     { href: "/student/resume", label: "CV", icon: FileText },
   ],
 };
 
-export function StudentNav({ steps }: { steps: CycleStep[] }) {
+export function StudentNav({ steps, pro }: { steps: CycleStep[]; pro: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const current = (href: string) => (pathname === href ? ("page" as const) : undefined);
@@ -65,9 +65,10 @@ export function StudentNav({ steps }: { steps: CycleStep[] }) {
               {step.name}
               {step.done && <span className="sr-only">, done</span>}
             </div>
-            {LINKS[step.name].map(({ href, label, icon: Icon }) => (
+            {LINKS[step.name].map(({ href, label, icon: Icon, pro: proOnly }) => (
               <Link className="nav-link" key={href} href={href} aria-current={current(href)}>
                 <Icon size={18} aria-hidden="true" />{label}
+                {proOnly && !pro && <span className="pro-tag" title="Included in SkillProof Pro. Open to try in this build.">Pro</span>}
               </Link>
             ))}
           </div>

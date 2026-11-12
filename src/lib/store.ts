@@ -153,6 +153,57 @@ export async function addEndorsements(token: string, endorsements: Endorsement[]
   return true;
 }
 
+export interface Coach {
+  name: string;
+  token: string;
+  learners: { workspace: string; joinedAt: string }[];
+  createdAt: string;
+}
+
+/** The coach profile belonging to the current account or demo session, if any. */
+export async function getCoach(): Promise<Coach | null> {
+  return kv.get<Coach>("coach", await workspaceKey());
+}
+
+export async function createCoach(name: string): Promise<Coach> {
+  const key = await workspaceKey();
+  const existing = await kv.get<Coach>("coach", key);
+  if (existing) return existing;
+  const coach: Coach = { name: name.trim(), token: crypto.randomUUID().replaceAll("-", ""), learners: [], createdAt: new Date().toISOString() };
+  await kv.set("coach", key, coach);
+  await kv.set("coachjoin", coach.token, { coach: key });
+  return coach;
+}
+
+/** Each learner's current record, newest joiner first. Learners whose workspace is gone are skipped. */
+export async function coachLearners(coach: Coach): Promise<{ student: Student; joinedAt: string }[]> {
+  const rows = await Promise.all(
+    coach.learners.map(async (l) => ({ student: (await kv.get<Workspace>("workspace", l.workspace))?.student, joinedAt: l.joinedAt })),
+  );
+  return rows.filter((r): r is { student: Student; joinedAt: string } => Boolean(r.student)).reverse();
+}
+
+export async function openCoachInvite(token: string): Promise<{ key: string; coach: Coach } | null> {
+  const entry = await kv.get<{ coach: string }>("coachjoin", token);
+  const coach = entry ? await kv.get<Coach>("coach", entry.coach) : null;
+  return entry && coach ? { key: entry.coach, coach } : null;
+}
+
+/** Shares the current student's progress with a coach. */
+export async function joinCoach(token: string, limit: number): Promise<"joined" | "already" | "full" | "self" | "invalid"> {
+  const opened = await openCoachInvite(token);
+  if (!opened) return "invalid";
+  const key = await workspaceKey();
+  if (key === opened.key) return "self";
+  if (opened.coach.learners.some((l) => l.workspace === key)) return "already";
+  if (opened.coach.learners.length >= limit) return "full";
+  const joinedAt = new Date().toISOString();
+  await kv.set("coach", opened.key, { ...opened.coach, learners: [...opened.coach.learners, { workspace: key, joinedAt }] });
+  const workspace = await currentWorkspace();
+  await writeWorkspace(key, { ...workspace, student: { ...workspace.student, coach: { name: opened.coach.name, joinedAt } } });
+  return "joined";
+}
+
 /** Students with their own accounts, for the employer search. */
 export async function accountStudents(): Promise<Student[]> {
   return (await kv.list<Workspace>("workspace", "u:")).map((w) => w.student);

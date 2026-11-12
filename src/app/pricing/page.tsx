@@ -23,7 +23,7 @@ const PLANS: { name: string; price: string; period: string; audience: string; pu
       { text: "Basic skill-gap summary", href: "/student/gaps" },
       { text: "Limited peer and mentor feedback", href: "/student/passport" },
       { text: "Basic shareable skills profile", href: `/p/${DEMO_STUDENT_ID}` },
-      { text: "Coach tools to invite and monitor a small number of learners" },
+      { text: "Coach tools to invite and monitor a small number of learners", href: "/coach" },
       { text: "Access to assessment results and history", href: "/student/progress" },
     ],
   },
@@ -34,7 +34,7 @@ const PLANS: { name: string; price: string; period: string; audience: string; pu
     audience: "For students, graduates and early-career professionals",
     purpose: "Turn skill assessment into measurable career development.",
     featured: true,
-    cta: { label: "Try every Pro feature in the demo", href: "/student" },
+    cta: { label: "Upgrade to Pro", href: "/student/upgrade" },
     features: [
       { text: "Everything in Free" },
       { text: "AI-generated personalised growth plan", href: "/student/plan" },
@@ -84,7 +84,7 @@ export default function PricingPage() {
           ))}
         </div>
 
-        <p className="small muted">Pro is billed once a year. Payments are not switched on in this hackathon build, so the demo shows every Pro feature unlocked.</p>
+        <p className="small muted">Pro is billed once a year. Payments are not switched on in this hackathon build: upgrading uses a practice checkout that takes no card details and charges nothing, and every Pro feature is open to try.</p>
       </div></main>
     </>
   );

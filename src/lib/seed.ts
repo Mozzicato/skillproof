@@ -72,6 +72,7 @@ export function seedStudent(id: string = DEMO_STUDENT_ID): Student {
         statement: "I supervised this cleaning script in our data lab. Sam wrote it and explained the date handling to me in person.",
         evaluationId: "eval-1",
         createdAt: "2026-10-20T15:00:00.000Z",
+        verified: { domain: "sample-university.example", work: true, at: "2026-10-20T15:00:00.000Z" },
       },
     ],
     claims: [

@@ -12,23 +12,13 @@ import {
 import { CurriculumForm } from "@/components/client";
 import { SiteHeader } from "@/components/SiteHeader";
 import { COMPETENCIES, JOBS, competency, role } from "@/lib/framework";
-import { calibrationLabel, latestRun } from "@/lib/calibration";
+import { latestRun } from "@/lib/calibration";
 import { sampleStudents } from "@/lib/roster";
-import { jobMatches, readiness, staleSkills } from "@/lib/scoring";
+import { readiness } from "@/lib/scoring";
 import { getCurricula } from "@/lib/store";
-import type { CompetencyId, Student } from "@/lib/types";
+import type { CompetencyId } from "@/lib/types";
+import { nextAction } from "@/lib/coaching";
 
-/** What the careers team should do next for one student, most urgent first. */
-function nextAction(s: Student): { label: string; tone: "good" | "mid" | "bad" | "" } {
-  const run = latestRun(s.assessments);
-  const ready = jobMatches(s.evidence).filter((m) => m.missing.length === 0).length;
-  const stale = staleSkills(role(s.targetRoleId).requirements.map((r) => r.competencyId), s.evidence);
-  if (run && calibrationLabel(run) === "Overconfident") return { label: "Overconfident: book a feedback session", tone: "bad" };
-  if (ready > 0) return { label: `Meets ${ready} ${ready === 1 ? "vacancy" : "vacancies"}: refer to employers`, tone: "good" };
-  if (stale.length > 0) return { label: `Evidence ageing on ${stale.length} ${stale.length === 1 ? "skill" : "skills"}: invite to reassess`, tone: "mid" };
-  if (s.sprint) return { label: `On a sprint for ${competency(s.sprint.competencyId).name}`, tone: "" };
-  return { label: "Building evidence", tone: "" };
-}
 
 export const dynamic = "force-dynamic";
 

@@ -93,6 +93,15 @@ export interface Endorsement {
   statement: string;
   evaluationId?: string;
   createdAt: string;
+  /** Set once the person proved they control an email address. Only the domain is kept, never the address. */
+  verified?: { domain: string; work: boolean; at: string };
+}
+
+export interface Plan {
+  tier: "free" | "pro";
+  since: string;
+  /** Upgrades in this build are practice checkouts: no payment is taken. */
+  via?: "practice";
 }
 
 export interface RubricCriterion {
@@ -196,4 +205,7 @@ export interface Student {
   assessments?: AssessmentRun[];
   sprint?: Sprint | null;
   endorsements?: Endorsement[];
+  plan?: Plan;
+  /** The coach this student shared their progress with. */
+  coach?: { name: string; joinedAt: string };
 }

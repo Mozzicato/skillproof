@@ -30,7 +30,7 @@ interface Spec {
   runs: { date: string; calibration: number; over: number; under: number; skills: RunSkill[] }[];
   projects?: { projectId: string; date: string; submission: string; summary: string; nextStep: string; results: Result[]; defence?: { date: string; feedback: string } }[];
   interviews?: { date: string; skills: [CompetencyId, number, string, string][] }[];
-  endorsements?: { competencyId: CompetencyId; name: string; role: EndorserRole; organisation: string; statement: string; date: string; project?: number }[];
+  endorsements?: { competencyId: CompetencyId; name: string; role: EndorserRole; organisation: string; statement: string; date: string; project?: number; domain?: string }[];
   sprint?: Sprint;
 }
 
@@ -120,6 +120,7 @@ function build(spec: Spec): Student {
     statement: e.statement,
     evaluationId: e.project === undefined ? undefined : evaluations[e.project].id,
     createdAt: at(e.date),
+    verified: e.domain ? { domain: e.domain, work: true, at: at(e.date) } : undefined,
   }));
 
   return {
@@ -204,8 +205,8 @@ Commits:
       ] },
     ],
     endorsements: [
-      { competencyId: "javascript", name: "Joanna Pike", role: "Employer", organisation: "Fieldnote Labs", statement: "Amina joined our team for a one-week trial. She wrote the input validation and its tests herself and walked us through every failure case.", date: "2026-10-30", project: 0 },
-      { competencyId: "git-testing", name: "Dr Kunle Adeyemi", role: "Lecturer", organisation: "Sample University, Department of Computer Science", statement: "Her coursework repository had the clearest commit history in the class, and the tests actually failed when I broke the code.", date: "2026-11-06" },
+      { competencyId: "javascript", name: "Joanna Pike", role: "Employer", organisation: "Fieldnote Labs", statement: "Amina joined our team for a one-week trial. She wrote the input validation and its tests herself and walked us through every failure case.", date: "2026-10-30", project: 0, domain: "fieldnotelabs.example" },
+      { competencyId: "git-testing", name: "Dr Kunle Adeyemi", role: "Lecturer", organisation: "Sample University, Department of Computer Science", statement: "Her coursework repository had the clearest commit history in the class, and the tests actually failed when I broke the code.", date: "2026-11-06", domain: "sample-university.example" },
     ],
   },
   {
@@ -276,7 +277,7 @@ Title: Four courses lost more than 10 points of attendance since week 3.`,
       },
     ],
     endorsements: [
-      { competencyId: "sql", name: "Samuel Ade", role: "Mentor", organisation: "Kestrel Analytics", statement: "I mentored Priya through a retention analysis on our anonymised data. She caught the incomplete-window problem before I mentioned it.", date: "2026-10-20", project: 0 },
+      { competencyId: "sql", name: "Samuel Ade", role: "Mentor", organisation: "Kestrel Analytics", statement: "I mentored Priya through a retention analysis on our anonymised data. She caught the incomplete-window problem before I mentioned it.", date: "2026-10-20", project: 0, domain: "kestrel-analytics.example" },
     ],
   },
   {
@@ -350,7 +351,7 @@ Title: Attendance is falling fastest in first-year Statistics and Accounting.`,
       },
     ],
     endorsements: [
-      { competencyId: "visualisation", name: "Dr Helen Okafor", role: "Lecturer", organisation: "Sample University, Department of Economics", statement: "Zainab built the attendance heatmap for our department review herself, and the committee used it to decide which courses to visit.", date: "2026-08-28", project: 0 },
+      { competencyId: "visualisation", name: "Dr Helen Okafor", role: "Lecturer", organisation: "Sample University, Department of Economics", statement: "Zainab built the attendance heatmap for our department review herself, and the committee used it to decide which courses to visit.", date: "2026-08-28", project: 0, domain: "sample-university.example" },
     ],
   },
   {
@@ -396,7 +397,7 @@ Note: Some orders appeared twice, so I kept one copy of each order line. Dates c
       },
     ],
     endorsements: [
-      { competencyId: "python", name: "Prof. Ruth Tembo", role: "Lecturer", organisation: "Sample University, Department of Engineering", statement: "Kwame automated the cleaning of our lab sensor logs in Python. He undersells himself; the code is better than most I see from data students.", date: "2026-10-26" },
+      { competencyId: "python", name: "Prof. Ruth Tembo", role: "Lecturer", organisation: "Sample University, Department of Engineering", statement: "Kwame automated the cleaning of our lab sensor logs in Python. He undersells himself; the code is better than most I see from data students.", date: "2026-10-26", domain: "sample-university.example" },
     ],
     sprint: { competencyId: "sql", projectId: "sql-retention", criterionId: "c1", target: 70, startedAt: at("2026-11-06"), dueAt: at("2026-11-20") },
   },
@@ -559,7 +560,7 @@ What I'd tell the business: about a quarter of first-time buyers come back withi
       },
     ],
     endorsements: [
-      { competencyId: "sql", name: "Dr Helen Okafor", role: "Lecturer", organisation: "Sample University, Department of Economics", statement: "Lena came to every SQL clinic this term. In September she could not write a join; she now helps other students with theirs.", date: "2026-11-09", project: 0 },
+      { competencyId: "sql", name: "Dr Helen Okafor", role: "Lecturer", organisation: "Sample University, Department of Economics", statement: "Lena came to every SQL clinic this term. In September she could not write a join; she now helps other students with theirs.", date: "2026-11-09", project: 0, domain: "sample-university.example" },
     ],
   },
   {
@@ -582,7 +583,7 @@ What I'd tell the business: about a quarter of first-time buyers come back withi
       ] },
     ],
     endorsements: [
-      { competencyId: "communication", name: "Marcus Hale", role: "Employer", organisation: "Harbour Retail Group", statement: "Fatima presented a sales review to our regional team during her placement. Managers asked for her slides afterwards.", date: "2026-11-01" },
+      { competencyId: "communication", name: "Marcus Hale", role: "Employer", organisation: "Harbour Retail Group", statement: "Fatima presented a sales review to our regional team during her placement. Managers asked for her slides afterwards.", date: "2026-11-01", domain: "harbourretail.example" },
     ],
   },
 ];

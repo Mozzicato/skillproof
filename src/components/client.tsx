@@ -56,6 +56,36 @@ export function ResetDemo() {
   );
 }
 
+export function PlanButton({ tier, label, quiet }: { tier: "free" | "pro"; label: string; quiet?: boolean }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  return (
+    <>
+      <button
+        type="button"
+        className={`btn${quiet ? " quiet" : ""}`}
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          setError("");
+          try {
+            await post("/api/plan", { tier });
+            router.refresh();
+          } catch (err) {
+            setError(message(err));
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {busy ? "Saving" : label}
+      </button>
+      {error && <p className="error" role="alert">{error}</p>}
+    </>
+  );
+}
+
 /** The browser's print dialog saves the passport as a PDF competency report; print styles hide the site chrome. */
 export function PrintButton() {
   return (

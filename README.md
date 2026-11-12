@@ -33,6 +33,14 @@ Sam Okoro is a sample student. The 2,000 students on the university and employer
 - **Reassess.** Reassessments prefer questions the student has not seen before. Evidence older than 60 days is flagged on the passport until the skill is proven again. The passport shows how much each skill has grown since the first evidence for it.
 - **Connect.** The Skill Passport is a public page with a QR code. A student can send a lecturer, mentor or interviewer a single-use private link to confirm skills they saw. Confirmations are only possible for skills that already have evidence, and they appear on the passport with the person's name and organisation as entered. Employers see self-awareness and confirmations in search results.
 
+## For judges
+
+- **Guided tour.** "Take the 3-minute tour" on the home page walks through eleven stops, from claims against proof to pricing.
+- **Eleven sample students** with full records cover every department and both roles. "Explore as" in the demo banner switches between them.
+- **Verified confirmations.** People confirming a skill enter a work email and a six-digit code. The passport shows only the email domain. Codes are sent with Resend when `RESEND_API_KEY` is set (and `EMAIL_FROM` optionally); without it the code is shown on screen, labelled as demo mode.
+- **Coach tools** (`/coach`). A coach shares one link, and up to five learners on the Free plan can choose to share their progress.
+- **Plans** (`/pricing`). Free and Pro at $29.99 a year. Upgrading uses a practice checkout: no card details, no payment.
+
 ## Checks
 
 ```

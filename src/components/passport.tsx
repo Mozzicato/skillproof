@@ -21,7 +21,14 @@ export function EndorsementItem({ item }: { item: Endorsement }) {
     <blockquote className="vouch">
       <p>“{item.statement}”</p>
       <footer className="small">
-        <strong>{item.name}</strong>, {item.role.toLowerCase()} at {item.organisation}. {formatDate(item.createdAt)}
+        <strong>{item.name}</strong>, {item.role.toLowerCase()} at {item.organisation}. {formatDate(item.createdAt)}{" "}
+        {item.verified ? (
+          <span className={`badge ${item.verified.work ? "good" : ""}`} title={`Verified by a code sent to an address at ${item.verified.domain}`}>
+            {item.verified.work ? "Work email verified" : "Email verified"}: {item.verified.domain}
+          </span>
+        ) : (
+          <span className="badge">Not verified</span>
+        )}
       </footer>
     </blockquote>
   );

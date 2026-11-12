@@ -51,7 +51,7 @@ export default async function PassportPage({ params }: { params: Promise<{ id: s
               <div><dt>Readiness</dt><dd>{readiness(target.requirements, student.evidence)}<span> of 100, {met} of {rows.length} requirements met</span></dd></div>
               {run && <div><dt>Self-awareness</dt><dd>{run.calibration}<span> of 100, {calibrationLabel(run).toLowerCase()}</span></dd></div>}
               <div><dt>Defended in person</dt><dd>{defended}<span> {defended === 1 ? "skill" : "skills"}</span></dd></div>
-              <div><dt>Confirmed by people</dt><dd>{endorsements.length}<span> {endorsements.length === 1 ? "confirmation" : "confirmations"}</span></dd></div>
+              <div><dt>Confirmed by people</dt><dd>{endorsements.length}<span> {endorsements.length === 1 ? "confirmation" : "confirmations"}, {endorsements.filter((e) => e.verified).length} verified by email</span></dd></div>
             </dl>
           </div>
           <div className="passport-qr">
